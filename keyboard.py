@@ -60,19 +60,19 @@ class generatorBase():
 	
 	#2 be replaced by children:
 	def tone_generator(self, p):#a period is from 0.0 to 1.0. p is not run trough modulo 1 first
-		return 0
+		return 0#placeholder
 	def get_freq(self, note):#tune for c4 = 60 and A = 440Hz
 		return 440.*math.pow(2, float(note-60)/12.)
 	
 	#private:
 	def _map_id(self, i):
 		return i[0]
-	def pack(self, frames):#this handles bit depthf. frame is float between -1 and 1
+	def pack(self, frames):#this handles bit-depth aswell. "frame" is a float between -1 and 1
 		h = "h"
 		p = struct.pack
 		return "".join((p(h, int(i*0x7FFF)) for i in frames))
 		#return struct.pack("H", int((frame+1)*0x7FFF))
-	def pack_bak(self, frames):#this handles bit depthf. frame is float between -1 and 1
+	def pack_bak(self, frames):
 		l = len(frames)
 		scaled = map(mul, frames, [0x7FFF]*l)
 		inted = map(int, scaled)
@@ -88,10 +88,11 @@ class squareGenerator(generatorBase):
 	def tone_generator(self, p):
 		return 1. if (p%1) > 0.5 else -1.
 
-class jigGenerator(generatorBase):
+class jigGenerator(generatorBase):#is this the right name? derp
 	def tone_generator(self, p):
 		return (p%1)*2. - 1.
 
+#todo: sawblade and more fun stuff
 
 def main(generator):
 	gen = generator()
