@@ -46,7 +46,7 @@ def main(generatorClass, keyboard=None, midifile=None):
 			print "note(%i,%i)" % (i.note, i.velocity),
 		elif i.type == "note_off":
 			gen.stop_note(i.note)
-		else:
+		elif i.type not in ("clock",):
 			print i.type,
 			#if i.type == "control_change": print dir(i)
 	
@@ -55,7 +55,7 @@ def main(generatorClass, keyboard=None, midifile=None):
 if __name__ == "__main__":
 	
 	f, k = None, None
-	k = mido.get_input_names()[0]#todo: give the user a choice?
+	#k = mido.get_input_names()[0]#todo: give the user a choice?
 	
 	#f = "midis/13417_Ballad-of-the-Windfish.mid"
 	#f = "midis/27641_Green-Greens.mid"
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 	#f = "midis/Hare Hare Yukai.mid"
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
-	#f = "midis/Makrells.mid"
+	f = "midis/Makrells.mid"
 	#f = "midis/mt-pyre.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
@@ -80,11 +80,13 @@ if __name__ == "__main__":
 	#f = "midis/Windmill.mid"
 	
 	
-	#main(audio.jigGenerator,       keyboard=k, midifile=f)
-	main(audio.squareGenerator,    keyboard=k, midifile=f)
+	
+	#main(audio.squareGenerator,    keyboard=k, midifile=f)
 	#main(audio.sineGenerator,      keyboard=k, midifile=f)
-	#main(audio.sawbladeGenerator,  keyboard=k, midifile=f)
-	#main(audio.dafuqGenerator,  keyboard=k, midifile=f)
+	#main(audio.triangleGenerator,  keyboard=k, midifile=f)
+	#main(audio.sawtoothGenerator,  keyboard=k, midifile=f)
+	main(audio.dafuqGenerator,     keyboard=k, midifile=f)
+	
 
 
 

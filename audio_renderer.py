@@ -80,10 +80,10 @@ class sineGenerator(generatorBase):
 class squareGenerator(generatorBase):
 	def tone_generator(self, p):
 		return 1. if (p%1) > 0.5 else -1.
-class jigGenerator(generatorBase):#is this the right name? derp
+class sawtoothGenerator(generatorBase):
 	def tone_generator(self, p):
 		return (p%1)*2. - 1.
-class sawbladeGenerator(generatorBase):#is this the right name? derp
+class triangleGenerator(generatorBase):
 	def tone_generator(self, p):
 		p = (p%1)*4
 		if p <= 1:
@@ -92,7 +92,7 @@ class sawbladeGenerator(generatorBase):#is this the right name? derp
 			return p-4
 		else:
 			return 2-p
-class dafuqGenerator(generatorBase):#is this the right name? derp
+class dafuqGenerator(generatorBase):#a happy little accident, oc plz donut iron
 	def tone_generator(self, p):
 		p = (p%1)*4
 		if p <= 1:
@@ -102,6 +102,7 @@ class dafuqGenerator(generatorBase):#is this the right name? derp
 		else:
 			return 1-p
 
+			
 def play(generator):
 	def callback(in_data, frame_count, time_info, status_flags):
 			global renders
