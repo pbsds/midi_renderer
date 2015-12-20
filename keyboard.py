@@ -25,7 +25,8 @@ def midoMainloop(gen, port, instruments, verbose=True):
 			if verbose: print "note(%i,0)" % i.note,
 		elif i.type == "program_change":
 			#print dir(i)
-			if i.channel <> 9: gen.instruments[i.channel] = instruments[i.program]
+			if i.channel <> 9:
+				gen.instruments[i.channel] = instruments[i.program]
 			print "Instrument(%i,%i)"%(i.channel, i.program), #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
 		elif i.type not in ("clock",) and verbose:
 			#print i.type,
@@ -102,7 +103,7 @@ if __name__ == "__main__":
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
 	#f = "midis/Gusty Garden Galaxy.mid"
-	#f = "midis/Hare Hare Yukai.mid"
+	f = "midis/Hare Hare Yukai.mid"
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Makrells.mid"
@@ -123,7 +124,7 @@ if __name__ == "__main__":
 	#f = "midis/undertale/Finale.mid"
 	#f = "midis/undertale/Heartbreak.mid"
 	#f = "midis/undertale/Megalovania.mid"
-	f = "midis/undertale/MIDIlovania.mid"
+	#f = "midis/undertale/MIDIlovania.mid"
 	#f = "midis/undertale/Ruins.mid"
 	#f = "midis/undertale/Spider Dance.mid"
 	

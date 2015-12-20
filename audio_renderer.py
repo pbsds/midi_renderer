@@ -8,25 +8,25 @@ RATE = 44100
 RECORD_SECONDS = 5
 
 #waves:
-def sineWave(p, freq):
+def sineWave(p):
 		return math.sin(p*math.pi*2)#slow, names, ech. it hurts
-def sine3Wave(p, freq):
+def sine3Wave(p):
 		return math.sin(p*math.pi*2)**3#slow, names, ech. it hurts
-def sine5Wave(p, freq):
+def sine5Wave(p):
 		return math.sin(p*math.pi*2)**5#slow, names, ech. it hurts
-def sine7Wave(p, freq):
+def sine7Wave(p):
 		return math.sin(p*math.pi*2)**7#slow, names, ech. it hurts
-def sine9Wave(p, freq):
+def sine9Wave(p):
 		return math.sin(p*math.pi*2)**9#slow, names, ech. it hurts
-def squareWave(p, freq):
+def squareWave(p):
 		return 1. if (p%1) > 0.5 else -1.
-def sawtoothWave(p, freq):
+def sawtoothWave(p):
 	return (p%1)*2. - 1.
-def saw3Wave(p, freq):
+def saw3Wave(p):
 	return ((p%1)*2. - 1.)**3
-def saw5Wave(p, freq):
+def saw5Wave(p):
 	return ((p%1)*2. - 1.)**5
-def triangleWave(p, freq):
+def triangleWave(p):
 		p = (p%1)*4
 		if p <= 1:
 			return p
@@ -34,7 +34,7 @@ def triangleWave(p, freq):
 			return p-4
 		else:
 			return 2-p
-def dafuqWave(p, freq):#a happy little accident
+def dafuqWave(p):#a happy little accident
 		p = (p%1)*4
 		if p <= 1:
 			return p
@@ -43,55 +43,45 @@ def dafuqWave(p, freq):#a happy little accident
 		else:
 			return 1-p
 #modifiers:
-def AddAttack2Wave(wave, length=0.5, perSecond=False):#length is number of seconds untill the velocity is halved for A4. for all if perSecond is true
-	if not perSecond:
-		def NewWave(p, freq):
-			return wave(p, freq)/(1. + p/(length*440.))
-	else:
-		def NewWave(p, freq):
-			return wave(p, freq)/(1. + p/(length*freq))
+def AddAttack2Wave(wave, length=0.5):#length is number of seconds untill the velocity is halved for A4
+	def NewWave(p):
+		return wave(p)/(1. + p/(length*440.))
 	return NewWave
 def AddCrush2Wave(wave, levels=8):
-	def NewWave(p, freq):
-		return float(int(wave(p, freq)*levels))/levels
+	def NewWave(p):
+		return float(int(wave(p)*levels))/levels
 	return NewWave
 def AddPitchWobbles2Wave(wave, speed=7, strength=.25, perSecond=False):#wobbles speed times per second for a A4, and scales with frequency. if perSeconds is true then all notes wobbles the same
-	if not perSecond:
-		speed *= 2*math.pi/440
-		def NewWave(p, freq):
-			return wave(p + math.sin(p*speed)*strength, freq)
-	else:
-		r = RATE
-		speed *= 2*math.pi
-		def NewWave(p, freq):
-			return wave(p + math.sin(p/freq*speed)*strength, freq)
+	speed *= 2*math.pi/440
+	def NewWave(p):
+		return wave(p + math.sin(p*speed)*strength)
 	return NewWave
-def AddVibrato2Wave(wave, speed=15., low=0.5):#speed = times a second
+def AddVibrato2Wave(wave, speed=15., low=0.5):#speed = times a second for A4
 	speed *= 2*math.pi
 	high = (1-low)/2
-	def NewWave(p, freq):
-		return wave(p, freq) * ((math.cos(p*speed/freq) + 1)*high + low)
+	def NewWave(p):
+		return wave(p) * ((math.cos(p*speed/440.) + 1)*high + low)
 	return NewWave
 def ChangeWaveOctave(wave, change=0):#change is number of octaves
 	speed = 2.**change
-	def NewWave(p, freq):
-		return wave(p*speed, freq*speed)
+	def NewWave(p):
+		return wave(p*speed)
 	return NewWave
 def CombineWaves(wave1, wave2, v1, v2):
-	def NewWave(p, freq):
-		return wave1(p, freq)*v1 + wave2(p, freq)*v2
+	def NewWave(p):
+		return wave1(p)*v1 + wave2(p)*v2
 	return NewWave
 def CompressWave(wave, gain=1.2):
-	def NewWave(p, freq):
-		return min(max(wave(p, freq)*gain, -1), 1)
+	def NewWave(p):
+		return min(max(wave(p)*gain, -1), 1)
 	return NewWave
 #perc
-def highhatBeat(p, freq):#short percussion
+def highhatBeat(p):#short percussion
 	#return (random.random()*2-1)/(1+p/10)
 	return (random.random()*2-1) * max(1-p/30, 0)
-def snareBeat(p, freq):
+def snareBeat(p):
 	return min(max((random.random()*2-1) * max(2-p/24, 0), -1), 1)
-def drumBeat(p, freq):
+def drumBeat(p):
 	return triangleWave(math.sqrt(3.6*p), freq)*1.2
 
 #soundfonts:
@@ -108,7 +98,7 @@ def MakeProgramTable():
 	harpsichord = AddCrush2Wave(harpsichord, levels=8)
 	out[6] = harpsichord
 	
-	ChromaticPercussion = AddAttack2Wave(squareWave, length=0.01, perSecond=True)
+	ChromaticPercussion = AddAttack2Wave(squareWave, length=0.01)#, perSecond=True)
 	ChromaticPercussion = ChangeWaveOctave(ChromaticPercussion, change=+1)
 	for i in xrange(8,16): out[i] = ChromaticPercussion
 	
@@ -135,25 +125,25 @@ def MakeProgramTable():
 	sitar = ChangeWaveOctave(sitar, change=-1)
 	out[104] = sitar
 	
-	#for i in xrange(128): out[i] = overdrive
+	for i in xrange(128): out[i] = squareWave#AddAttack2Wave(squareWave, length=0.4)
 	return out
 
 #generator
 class generator():
-	frequency = float(RATE)
+	rate = float(RATE)
 	channels = 2
 	
 	instruments = [sineWave for _ in xrange(16)]#15 channels instead?
 	
 	def __init__(self):
 		self.notes = [set() for _ in xrange(16)]
-		self.note = []#[i] = [channel, note, velocity, start pos, instrument, frequency]
+		self.note = []#[i] = [channel, note, velocity, start pos, instrument, frequency/rate]
 		self.pos = 0#position
 	
 	#input
 	def set_note(self, channel, note, velocity, modify=False):
 		if note not in self.notes[channel]:
-			self.note.append([channel, note, float(velocity)/4, self.pos, self.instruments[channel], self.get_freq(note)])
+			self.note.append([channel, note, float(velocity)/4, self.pos, self.instruments[channel], self.get_freq(note)/self.rate])
 			self.notes[channel].add(note)
 		else:
 			for i, n in enumerate(self.note):
@@ -169,16 +159,23 @@ class generator():
 				return
 	
 	def get_frames(self, chunk):#render frames
-		out = np.zeros((chunk, self.channels), dtype=np.float32)
-		
 		#speedup the name lookup a little
-		f = self.frequency
-		notes = tuple(self.note)
+		#notes = tuple(self.note)
+		notes = self.note[:]
 		
 		if notes:
-			for e, i in enumerate(map(float, xrange(self.pos, self.pos+chunk))):
-				out[e, :] = sum(w((i-p)/f * freq, freq) * v for c, n, v, p, w, freq in notes)
-		
+			
+			out = np.fromiter((sum(n[4]((i-n[3]) * n[5]) * n[2] for n in notes) for i in map(float, xrange(self.pos, self.pos+chunk))), dtype=np.float32, count=chunk)
+			#out = np.zeros(chunk, dtype=np.float32)
+			#for e, i in enumerate(map(float, xrange(self.pos, self.pos+chunk))):
+				#out[e, :] = sum(n[4]((i-n[3])*n[5]) * n[2] for n in notes)
+				#out[e] = sum(n[4]((i-n[3])*n[5]) * n[2] for n in notes)
+			
+			if self.channels > 1:
+				out = np.array([out]*self.channels)
+		else:
+			out = np.zeros((self.channels, chunk), dtype=np.float32)
+				
 		self.pos += chunk
 		
 		np.clip(out, -1, 1, out=out)
@@ -192,7 +189,7 @@ class generator():
 	#internal:
 	def pack(self, frames):#np compatible
 		frames *= 0x7FFF
-		return frames.astype(np.int16).tostring()
+		return frames.astype(np.int16).tostring("F")
 
 #player for pyaudio:
 renders = []
