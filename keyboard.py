@@ -9,51 +9,52 @@ def midoMainloop(gen, port, instruments, verbose=True):
 	last_few_renders = []#to keep an average
 	neededRenderRate = str(round(float(audio.RATE)/float(audio.CHUNK), 2))
 	neededRenderTime = str(round(float(audio.CHUNK)/float(audio.RATE) * 1000., 2)) #ms
-	while 1:
-		#handle inputs
-		for i in port.iter_pending():#fuck, midi.play doesn't have this...
-			if i.type == "note_on":
-				if i.velocity == 0:
-					gen.stop_note(i.channel, i.note)
-				else:
-					gen.set_note(i.channel, i.note, float(i.velocity)/127.)
-				if verbose: print "note(%i,%i)" % (i.note, i.velocity),
-			elif i.type == "note_off":
+	
+	nq = 0
+	for i in port:
+		if i.type == "note_on":
+			nq += 1
+			if i.velocity == 0:
 				gen.stop_note(i.channel, i.note)
-				if verbose: print "note(%i,0)" % i.note,
-			elif i.type not in ("clock",) and verbose:
-				#print i.type,
-				#if i.type == "control_change": 
-					#print dir(i)
-					#print i.control, 
-				#if i.type == "program_change": 
-					#print dir(i)
-					#print i.program, #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
-				pass
+			else:
+				gen.set_note(i.channel, i.note, float(i.velocity)/127.)
+			if verbose: print "note(%i,%i)" % (i.note, i.velocity),
+		elif i.type == "note_off":
+			nq += 1
+			gen.stop_note(i.channel, i.note)
+			if verbose: print "note(%i,0)" % i.note,
+		elif i.type not in ("clock",) and verbose:
+			#print i.type,
+			#if i.type == "control_change": 
+				#print dir(i)
+				#print i.control, 
+			#if i.type == "program_change": 
+				#print dir(i)
+				#print i.program, #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+			pass
 		
 		#print pretty information
 		t = time.time()
-		if t - prev_print >= 1./5.:
+		if t - prev_print >= 1./10.:
 			renderNum, renderTime = audio.get_rendercount_since_last_time()
 			last_few_renders.append((renderNum, renderTime, prev_print))
 			
 			if len(last_few_renders)>10: del last_few_renders[0]
 			renderRateAvg = sum(map(lambda x:x[0], last_few_renders)) / (t - last_few_renders[0][2])
-			renderTimeAvg = sum(map(lambda x:x[1], last_few_renders)) / len(last_few_renders) * 1000.#ms
+			renderTimeAvg = sum(map(lambda x:x[1], last_few_renders)) / sum(map(lambda x:x[0], last_few_renders)) * 1000.#ms
 			
-			print "\nAudiochunk render @%.2f/%sHz, %.2fms/%.2fms, Notes playing: %i" % (renderRateAvg, neededRenderRate, renderTimeAvg, neededRenderTime, len(gen.note))
+			print "\n\nAudio renderer @%.2f/%sHz, %.2fms/%sms, Notes playing: %i, events: %i" % (renderRateAvg, neededRenderRate, renderTimeAvg, neededRenderTime, len(gen.note), nq)
 			prev_print = t
+			nq = 0
 			
 
 def main(keyboard=None, midifile=None, verbose=True):
 	if keyboard:
 		port = mido.open_input(keyboard)
 	elif midifile:
-		port =  mido.MidiFile(midifile)#.play()
+		port =  mido.MidiFile(midifile).play()
 	else:
 		raise Exception("No input dumb dumb")
-	
-	print dir(port)
 	
 	gen = audio.generator()
 	instruments = audio.MakeProgramTable()
@@ -85,7 +86,7 @@ def main(keyboard=None, midifile=None, verbose=True):
 	
 	midoMainloop(gen, port, instruments, verbose=verbose)#blocking
 	
-	midi_stream.close()
+	port.close()
 
 if __name__ == "__main__":
 	f, k, s	= None, None, False
@@ -115,7 +116,7 @@ if __name__ == "__main__":
 	#f = "midis/Windmill.mid"
 	
 	#f = "midis/undertale/Death By Glamour.mid"
-	f = "midis/undertale/Determination.mid"
+	#f = "midis/undertale/Determination.mid"
 	#f = "midis/undertale/Dogsong.mid"
 	#f = "midis/undertale/Enemy Approaching.mid"
 	#f = "midis/undertale/Finale.mid"
@@ -126,8 +127,8 @@ if __name__ == "__main__":
 	#f = "midis/undertale/Spider Dance.mid"
 	
 	#holy hell
-	#s = True
-	#f = "midis/black midi/Death Waltz.mid"
+	s = True
+	f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/bad apple 4.6 million.mid"#memoryerror
 	#f = "midis/black midi/The Titan_2.mid"
 	#f = "midis/black midi/.mid"

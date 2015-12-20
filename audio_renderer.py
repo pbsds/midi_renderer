@@ -83,7 +83,7 @@ def MakeProgramTable():
 	#none = squareWave
 	out = [none for i in range(128)]
 	
-	piano = AddAttack2Wave(squareWave, length=0.3)
+	piano = AddAttack2Wave(squareWave, length=0.3)#todo: fix this
 	for i in xrange(0,8): out[i] = piano
 	
 	harpsichord = AddAttack2Wave(sawtoothWave, length=0.2)
@@ -98,7 +98,7 @@ def MakeProgramTable():
 	organ = AddPitchWobbles2Wave(organ, speed=3.2, strength=0.25)
 	for i in xrange(16,24): out[i] = organ
 	
-	guitar = AddAttack2Wave(sawtoothWave, length=0.4)
+	guitar = AddAttack2Wave(sawtoothWave, length=0.4)#heavy, doesn't sound good
 	guitarp1 = AddPitchWobbles2Wave(guitar, speed=3, strength=0.25)
 	guitarp2 = AddVibrato2Wave(guitar, speed=6, low=0.2)
 	guitar = CombineWaves(guitarp1, guitarp2, 0.6, 0.5)
@@ -125,12 +125,12 @@ class generator():
 	#input
 	def set_note(self, channel, note, velocity, modify=False):
 		if note not in self.notes[channel]:
-			self.note.append([channel, note, float(velocity)/3, self.pos, self.instruments[channel], self.get_freq(note)])
+			self.note.append([channel, note, float(velocity)/4, self.pos, self.instruments[channel], self.get_freq(note)])
 			self.notes[channel].add(note)
 		else:
 			for i, n in enumerate(self.note):
 				if n[0] == channel and n[1] == note:
-					self.note[i][2] = float(velocity)/3
+					self.note[i][2] = float(velocity)/4
 					if not modify: self.note[i][3] = self.pos
 					return
 	def stop_note(self, channel, note):
