@@ -4,55 +4,86 @@ from operator import mul
 mido.set_backend('mido.backends.pygame')#change this if you use something else
 import audio_renderer as audio
 
+def midoMainloop(gen, port, instruments, verbose=True):
+	prev_print = time.time()
+	last_few_renders = []#to keep an average
+	neededRenderRate = str(round(float(audio.RATE)/float(audio.CHUNK), 2))
+	neededRenderTime = str(round(float(audio.CHUNK)/float(audio.RATE) * 1000., 2)) #ms
+	while 1:
+		#handle inputs
+		for i in port.iter_pending():#fuck, midi.play doesn't have this...
+			if i.type == "note_on":
+				if i.velocity == 0:
+					gen.stop_note(i.channel, i.note)
+				else:
+					gen.set_note(i.channel, i.note, float(i.velocity)/127.)
+				if verbose: print "note(%i,%i)" % (i.note, i.velocity),
+			elif i.type == "note_off":
+				gen.stop_note(i.channel, i.note)
+				if verbose: print "note(%i,0)" % i.note,
+			elif i.type not in ("clock",) and verbose:
+				#print i.type,
+				#if i.type == "control_change": 
+					#print dir(i)
+					#print i.control, 
+				#if i.type == "program_change": 
+					#print dir(i)
+					#print i.program, #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+				pass
+		
+		#print pretty information
+		t = time.time()
+		if t - prev_print >= 1./5.:
+			renderNum, renderTime = audio.get_rendercount_since_last_time()
+			last_few_renders.append((renderNum, renderTime, prev_print))
+			
+			if len(last_few_renders)>10: del last_few_renders[0]
+			renderRateAvg = sum(map(lambda x:x[0], last_few_renders)) / (t - last_few_renders[0][2])
+			renderTimeAvg = sum(map(lambda x:x[1], last_few_renders)) / len(last_few_renders) * 1000.#ms
+			
+			print "\nAudiochunk render @%.2f/%sHz, %.2fms/%.2fms, Notes playing: %i" % (renderRateAvg, neededRenderRate, renderTimeAvg, neededRenderTime, len(gen.note))
+			prev_print = t
+			
 
-def main(gen, keyboard=None, midifile=None, silent=False):
+def main(keyboard=None, midifile=None, verbose=True):
 	if keyboard:
-		midi_stream = mido.open_input(keyboard)
+		port = mido.open_input(keyboard)
 	elif midifile:
-		midi_stream =  mido.MidiFile(midifile).play()
+		port =  mido.MidiFile(midifile)#.play()
 	else:
-		raise Exception("wrong input dumb dumb")
+		raise Exception("No input dumb dumb")
 	
+	print dir(port)
+	
+	gen = audio.generator()
+	instruments = audio.MakeProgramTable()
+	
+	#temp
+	gen.instruments = [instruments[0] for _ in xrange(16)]
+	if 0:	
+		#gen.instruments = [audio.sineWave for _ in xrange(16)]
+		#gen.instruments = [audio.triangleWave for _ in xrange(16)]
+		#gen.instruments = [audio.squareWave for _ in xrange(16)]
+		#gen.instruments = [audio.sawtoothWave for _ in xrange(16)]
+		#gen.instruments = [audio.dafuqWave for _ in xrange(16)]
+		for i in xrange(16):
+			pass
+			#gen.instruments[i] = audio.AddAttack2Wave(gen.instruments[i], 0.5)
+			#gen.instruments[i] = audio.AddPitchWobbles2Wave(gen.instruments[i], speed=7, strength=.25)
+			#gen.instruments[i] = audio.AddPitchWobbles2Wave(gen.instruments[i], speed=7, strength=.25, perSecond=True)
+			#gen.instruments[i] = audio.AddVibrato2Wave(gen.instruments[i], speed=15.)
+			#gen.instruments[i] = audio.AddCrush2Wave(gen.instruments[i], 4)
+			#gen.instruments[i] = audio.ChangeWaveOctave(gen.instruments[i], 0)
+		pass
+	
+	gen.instruments[9] = audio.highhatBeat
+	#gen.instruments[9] = audio.snareBeat
+	#gen.instruments[9] = audio.drumBeat
+	
+	#do:
 	stream = audio.play(gen)
 	
-	debug = not silent
-	prev_clock = -0
-	last_few_renders = []
-	renderRate = str(round(float(audio.RATE)/audio.CHUNK, 2))
-	for i in midi_stream:
-		if i.type == "clock" or time.time()-prev_clock > 1./30. and debug:#debug data
-			t = time.time()
-			h = t-prev_clock
-			prev_clock = t
-			
-			last_few_renders.append((audio.get_rendercount_since_last_time(), h if h > 0 else 1))#huehue
-			if len(last_few_renders)>50: del last_few_renders[0]
-			
-			if h > 0:
-				h = round(1./h, 2)
-			else:
-				h = 0
-			
-			r = round(sum(map(lambda x:x[0], last_few_renders)) / sum(map(lambda x:x[1], last_few_renders)), 2)
-			
-			print "\nMido clock @%sHz, Render @%s/%sHz, Notes: %i," % (str(h).zfill(5), str(r).zfill(len(renderRate)), renderRate, len(gen.note)),
-		
-		if i.type == "note_on":#note input
-			if i.velocity == 0:
-				gen.stop_note(i.channel, i.note)#todo: separate with channels
-			else:
-				gen.set_note(i.channel, i.note, float(i.velocity)/127.)
-			if debug: print "note(%i,%i)" % (i.note, i.velocity),
-		elif i.type == "note_off":
-			gen.stop_note(i.channel, i.note)
-		elif i.type not in ("clock",) and debug:
-			print i.type,
-			if i.type == "control_change": 
-				#print dir(i)
-				print i.control, 
-			if i.type == "program_change": 
-				#print dir(i)
-				print i.program, #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+	midoMainloop(gen, port, instruments, verbose=verbose)#blocking
 	
 	midi_stream.close()
 
@@ -64,7 +95,7 @@ if __name__ == "__main__":
 	#f = "midis/27641_Green-Greens.mid"
 	#f = "midis/Clock Town 2.mid"
 	#f = "midis/Clock Town.mid"
-	f = "midis/Darude_-_Sandstorm.mid"
+	#f = "midis/Darude_-_Sandstorm.mid"
 	#f = "midis/file.mid"
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
@@ -83,6 +114,17 @@ if __name__ == "__main__":
 	#f = "midis/Windmill 2.mid"
 	#f = "midis/Windmill.mid"
 	
+	#f = "midis/undertale/Death By Glamour.mid"
+	f = "midis/undertale/Determination.mid"
+	#f = "midis/undertale/Dogsong.mid"
+	#f = "midis/undertale/Enemy Approaching.mid"
+	#f = "midis/undertale/Finale.mid"
+	#f = "midis/undertale/Heartbreak.mid"
+	#f = "midis/undertale/Megalovania.mid"
+	#f = "midis/undertale/MIDIlovania.mid"
+	#f = "midis/undertale/Ruins.mid"
+	#f = "midis/undertale/Spider Dance.mid"
+	
 	#holy hell
 	#s = True
 	#f = "midis/black midi/Death Waltz.mid"
@@ -90,23 +132,7 @@ if __name__ == "__main__":
 	#f = "midis/black midi/The Titan_2.mid"
 	#f = "midis/black midi/.mid"
 	
-	gen = audio.generator()
-	#gen.instruments = [audio.sineWave]*16
-	gen.instruments = [audio.squareWave]*16
-	#gen.instruments = [audio.triangleWave]*16
-	#gen.instruments = [audio.sawtoothWave]*16
-	#gen.instruments = [audio.dafuqWave]*16
-	
-	for i in xrange(16):
-		pass
-		gen.instruments[i] = audio.AddAttack2Wave(gen.instruments[i], 0.5)
-		#gen.instruments[i] = audio.AddCrush2Wave(gen.instruments[i], 4)
-	
-	gen.instruments[9] = audio.highhatBeat
-	#gen.instruments[9] = audio.snareBeat
-	#gen.instruments[9] = audio.drumBeat
-	
-	main(gen, keyboard=k, midifile=f, silent=s)
+	main(keyboard=k, midifile=f, verbose=not s)
 	
 
 

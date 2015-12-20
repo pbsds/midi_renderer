@@ -1,4 +1,4 @@
-import pyaudio, math, itertools, struct, random
+import pyaudio, math, itertools, struct, random, time
 
 #global settings
 CHUNK = 512
@@ -7,17 +7,14 @@ CHANNELS = 2
 RATE = 44100
 RECORD_SECONDS = 5
 
-#internal globals
-renders = 0
-
 #waves:
-def sineWave(p):
+def sineWave(p, freq):
 		return math.sin(p*math.pi*2)#slow, names, ech. it hurts
-def squareWave(p):
+def squareWave(p, freq):
 		return 1. if (p%1) > 0.5 else -1.
-def sawtoothWave(p):
+def sawtoothWave(p, freq):
 		return (p%1)*2. - 1.
-def triangleWave(p):
+def triangleWave(p, freq):
 		p = (p%1)*4
 		if p <= 1:
 			return p
@@ -25,7 +22,7 @@ def triangleWave(p):
 			return p-4
 		else:
 			return 2-p
-def dafuqWave(p):#a happy little accident
+def dafuqWave(p, freq):#a happy little accident
 		p = (p%1)*4
 		if p <= 1:
 			return p
@@ -34,25 +31,85 @@ def dafuqWave(p):#a happy little accident
 		else:
 			return 1-p
 #modifiers:
-def AddAttack2Wave(wave, length=1.0):#length in kinda seconds untill the velocity is halved
-	l = 440.0 * length
-	def NewWave(p):
-		return wave(p)/(1. + p/l)
+def AddAttack2Wave(wave, length=0.5, perSecond=False):#length is number of seconds untill the velocity is halved for A4. for all if perSecond is true
+	if not perSecond:
+		def NewWave(p, freq):
+			return wave(p, freq)/(1. + p/(length*440.))
+	else:
+		def NewWave(p, freq):
+			return wave(p, freq)/(1. + p/(length*freq))
 	return NewWave
-def AddCrush2Wave(wave, levels=100):#length in kinda seconds untill the velocity is halved
-	def NewWave(p):
-		return float(int(wave(p)*levels))/levels
+def AddCrush2Wave(wave, levels=8):
+	def NewWave(p, freq):
+		return float(int(wave(p, freq)*levels))/levels
+	return NewWave
+def AddPitchWobbles2Wave(wave, speed=7, strength=.25, perSecond=False):#wobbles speed times per second for a A4, and scales with frequency. if perSeconds is true then all notes wobbles the same
+	if not perSecond:
+		speed *= 2*math.pi/440
+		def NewWave(p, freq):
+			return wave(p + math.sin(p*speed)*strength, freq)
+	else:
+		r = RATE
+		speed *= 2*math.pi
+		def NewWave(p, freq):
+			return wave(p + math.sin(p/freq*speed)*strength, freq)
+	return NewWave
+def AddVibrato2Wave(wave, speed=15., low=0.0):#speed = times a second
+	speed *= 2*math.pi
+	def NewWave(p, freq):
+		return wave(p, freq) * ((math.cos(p*speed/freq) + 1)/2.*(1.-low) + low)
+	return NewWave
+def ChangeWaveOctave(wave, change=0):#change is number of octaves
+	speed = 2.**change
+	def NewWave(p, freq):
+		return wave(p*speed, freq*speed)
+	return NewWave
+def CombineWaves(wave1, wave2, v1, v2):
+	def NewWave(p, freq):
+		return wave1(p, freq)*v1 + wave2(p, freq)*v2
 	return NewWave
 #perc
-def highhatBeat(p):#short percussion
+def highhatBeat(p, freq):#short percussion
 	#return (random.random()*2-1)/(1+p/10)
 	return (random.random()*2-1) * max(1-p/30, 0)
-def snareBeat(p):
+def snareBeat(p, freq):
 	return min(max((random.random()*2-1) * max(2-p/24, 0), -1), 1)
-def drumBeat(p):
-	return triangleWave(math.sqrt(1.8*p))*1.2
+def drumBeat(p, freq):
+	return triangleWave(math.sqrt(3.6*p), freq)*1.2
 
+#soundfonts:
+def MakeProgramTable():
+	none = lambda x, y: 0.
+	#none = squareWave
+	out = [none for i in range(128)]
 	
+	piano = AddAttack2Wave(squareWave, length=0.3)
+	for i in xrange(0,8): out[i] = piano
+	
+	harpsichord = AddAttack2Wave(sawtoothWave, length=0.2)
+	harpsichord = AddCrush2Wave(harpsichord, levels=8)
+	out[6] = harpsichord
+	
+	ChromaticPercussion = AddAttack2Wave(squareWave, length=0.01, perSecond=True)
+	ChromaticPercussion = ChangeWaveOctave(ChromaticPercussion, change=+1)
+	for i in xrange(8,16): out[i] = ChromaticPercussion
+	
+	organ = AddAttack2Wave(sineWave, length=1.5)
+	organ = AddPitchWobbles2Wave(organ, speed=3.2, strength=0.25)
+	for i in xrange(16,24): out[i] = organ
+	
+	guitar = AddAttack2Wave(sawtoothWave, length=0.4)
+	guitarp1 = AddPitchWobbles2Wave(guitar, speed=3, strength=0.25)
+	guitarp2 = AddVibrato2Wave(guitar, speed=6, low=0.2)
+	guitar = CombineWaves(guitarp1, guitarp2, 0.6, 0.5)
+	for i in xrange(24, 32): out[i] = guitar
+	
+	overdrive = triangleWave#WIP
+	for i in xrange(29, 31): out[i] = guitar
+	
+	out[0] = overdrive
+	return out
+
 #generator
 class generator():
 	frequency = float(RATE)
@@ -93,7 +150,7 @@ class generator():
 		
 		if len(notes):
 			for i in map(float, xrange(self.pos, self.pos+chunk)):
-				frame = sum(w((i-p)/f * freq) * v for c, n, v, p, w, freq in notes)
+				frame = sum(w((i-p)/f * freq, freq) * v for c, n, v, p, w, freq in notes)
 				
 				if -1 <= frame <= 1:
 					for _ in xrange(chn):
@@ -124,12 +181,15 @@ class generator():
 		inted = map(int, scaled)
 		return struct.pack("h"*l, *inted)
 
-			
+#player for pyaudio:
+renders = []
 def play(generator):
 	def callback(in_data, frame_count, time_info, status_flags):
-			global renders
-			renders += 1
-			return (generator.get_frames(frame_count), pyaudio.paContinue)
+			#global renders
+			epoch = time.time()
+			out = generator.get_frames(frame_count)
+			renders.append(time.time()-epoch)#mutable
+			return (out, pyaudio.paContinue)
 	
 	pa = pyaudio.PyAudio()
 	stream = pa.open(format=FORMAT,
@@ -139,16 +199,14 @@ def play(generator):
 					frames_per_buffer=CHUNK,
 					stream_callback=callback)
 	return stream
-def init(genClass):
-	gen = genClass()
-	play(gen)
-	
-	return gen
-
-#cause why not?
+#def init(genClass):
+#	gen = genClass()
+#	play(gen)
+#	
+#	return gen
 def get_rendercount_since_last_time():#horribly long name
 	global renders
-	ret = renders
-	renders = 0
+	ret = (len(renders), sum(renders))
+	del renders[:]
 	return ret
 
