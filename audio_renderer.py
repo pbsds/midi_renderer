@@ -1,4 +1,4 @@
-import pyaudio, math, itertools, struct, random, time
+import pyaudio, math, itertools, struct, random, time, numpy as np
 
 #global settings
 CHUNK = 512
@@ -10,10 +10,22 @@ RECORD_SECONDS = 5
 #waves:
 def sineWave(p, freq):
 		return math.sin(p*math.pi*2)#slow, names, ech. it hurts
+def sine3Wave(p, freq):
+		return math.sin(p*math.pi*2)**3#slow, names, ech. it hurts
+def sine5Wave(p, freq):
+		return math.sin(p*math.pi*2)**5#slow, names, ech. it hurts
+def sine7Wave(p, freq):
+		return math.sin(p*math.pi*2)**7#slow, names, ech. it hurts
+def sine9Wave(p, freq):
+		return math.sin(p*math.pi*2)**9#slow, names, ech. it hurts
 def squareWave(p, freq):
 		return 1. if (p%1) > 0.5 else -1.
 def sawtoothWave(p, freq):
-		return (p%1)*2. - 1.
+	return (p%1)*2. - 1.
+def saw3Wave(p, freq):
+	return ((p%1)*2. - 1.)**3
+def saw5Wave(p, freq):
+	return ((p%1)*2. - 1.)**5
 def triangleWave(p, freq):
 		p = (p%1)*4
 		if p <= 1:
@@ -54,10 +66,11 @@ def AddPitchWobbles2Wave(wave, speed=7, strength=.25, perSecond=False):#wobbles 
 		def NewWave(p, freq):
 			return wave(p + math.sin(p/freq*speed)*strength, freq)
 	return NewWave
-def AddVibrato2Wave(wave, speed=15., low=0.0):#speed = times a second
+def AddVibrato2Wave(wave, speed=15., low=0.5):#speed = times a second
 	speed *= 2*math.pi
+	high = (1-low)/2
 	def NewWave(p, freq):
-		return wave(p, freq) * ((math.cos(p*speed/freq) + 1)/2.*(1.-low) + low)
+		return wave(p, freq) * ((math.cos(p*speed/freq) + 1)*high + low)
 	return NewWave
 def ChangeWaveOctave(wave, change=0):#change is number of octaves
 	speed = 2.**change
@@ -67,6 +80,10 @@ def ChangeWaveOctave(wave, change=0):#change is number of octaves
 def CombineWaves(wave1, wave2, v1, v2):
 	def NewWave(p, freq):
 		return wave1(p, freq)*v1 + wave2(p, freq)*v2
+	return NewWave
+def CompressWave(wave, gain=1.2):
+	def NewWave(p, freq):
+		return min(max(wave(p, freq)*gain, -1), 1)
 	return NewWave
 #perc
 def highhatBeat(p, freq):#short percussion
@@ -80,10 +97,11 @@ def drumBeat(p, freq):
 #soundfonts:
 def MakeProgramTable():
 	none = lambda x, y: 0.
-	#none = squareWave
+	none = squareWave
 	out = [none for i in range(128)]
 	
-	piano = AddAttack2Wave(squareWave, length=0.3)#todo: fix this
+	piano = CombineWaves(ChangeWaveOctave(sineWave, change=2), triangleWave, 0.18, 0.8)
+	piano = AddAttack2Wave(piano, length=0.3)
 	for i in xrange(0,8): out[i] = piano
 	
 	harpsichord = AddAttack2Wave(sawtoothWave, length=0.2)
@@ -96,18 +114,28 @@ def MakeProgramTable():
 	
 	organ = AddAttack2Wave(sineWave, length=1.5)
 	organ = AddPitchWobbles2Wave(organ, speed=3.2, strength=0.25)
-	for i in xrange(16,24): out[i] = organ
+	for i in xrange(16,20): out[i] = organ
 	
-	guitar = AddAttack2Wave(sawtoothWave, length=0.4)#heavy, doesn't sound good
-	guitarp1 = AddPitchWobbles2Wave(guitar, speed=3, strength=0.25)
-	guitarp2 = AddVibrato2Wave(guitar, speed=6, low=0.2)
-	guitar = CombineWaves(guitarp1, guitarp2, 0.6, 0.5)
+	accordion = AddAttack2Wave(sine9Wave, length=1.5)
+	accordion = AddVibrato2Wave(accordion, speed=3.2, low=0.7)
+	for i in xrange(20,24): out[i] = accordion
+	
+	guitar = AddAttack2Wave(sine5Wave, length=0.20)
 	for i in xrange(24, 32): out[i] = guitar
 	
-	overdrive = triangleWave#WIP
-	for i in xrange(29, 31): out[i] = guitar
+	overdrive = CompressWave(saw5Wave, gain=10)
+	overdrive = AddAttack2Wave(overdrive, length=1.2)
+	overdrive = AddVibrato2Wave(overdrive, speed=2, low=0.8)
+	for i in xrange(29, 31): out[i] = overdrive
 	
-	out[0] = overdrive
+	
+	
+	sitar = AddCrush2Wave(guitar, levels=4)
+	sitar = CompressWave(sitar, gain=1.5)
+	sitar = ChangeWaveOctave(sitar, change=-1)
+	out[104] = sitar
+	
+	#for i in xrange(128): out[i] = overdrive
 	return out
 
 #generator
@@ -141,27 +169,19 @@ class generator():
 				return
 	
 	def get_frames(self, chunk):#render frames
-		out = []
+		out = np.zeros((chunk, self.channels), dtype=np.float32)
 		
 		#speedup the name lookup a little
-		chn = self.channels
 		f = self.frequency
 		notes = tuple(self.note)
 		
-		if len(notes):
-			for i in map(float, xrange(self.pos, self.pos+chunk)):
-				frame = sum(w((i-p)/f * freq, freq) * v for c, n, v, p, w, freq in notes)
-				
-				if -1 <= frame <= 1:
-					for _ in xrange(chn):
-						out.append(frame)
-				else:
-					for _ in xrange(chn):
-						out.append(math.copysign(1, frame))
-					#out.append(frame)
-		else:
-			out = [0.]*chunk*chn
+		if notes:
+			for e, i in enumerate(map(float, xrange(self.pos, self.pos+chunk))):
+				out[e, :] = sum(w((i-p)/f * freq, freq) * v for c, n, v, p, w, freq in notes)
+		
 		self.pos += chunk
+		
+		np.clip(out, -1, 1, out=out)
 		
 		return self.pack(out)
 	
@@ -170,16 +190,9 @@ class generator():
 		return 440.*math.pow(2, float(note-58)/12.)
 	
 	#internal:
-	#todo: determine the fastest of the two: (maybe even implement it in numpy instead?)
-	def pack(self, frames):#this handles bit-depth aswell. "frame" is a float between -1 and 1
-		p = struct.pack
-		n = int
-		return "".join((p("h", n(i*0x7FFF)) for i in frames))
-	def pack2(self, frames):
-		l = len(frames)
-		scaled = map(mul, frames, [0x7FFF]*l)
-		inted = map(int, scaled)
-		return struct.pack("h"*l, *inted)
+	def pack(self, frames):#np compatible
+		frames *= 0x7FFF
+		return frames.astype(np.int16).tostring()
 
 #player for pyaudio:
 renders = []

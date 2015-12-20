@@ -23,14 +23,15 @@ def midoMainloop(gen, port, instruments, verbose=True):
 			nq += 1
 			gen.stop_note(i.channel, i.note)
 			if verbose: print "note(%i,0)" % i.note,
+		elif i.type == "program_change":
+			#print dir(i)
+			if i.channel <> 9: gen.instruments[i.channel] = instruments[i.program]
+			print "Instrument(%i,%i)"%(i.channel, i.program), #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
 		elif i.type not in ("clock",) and verbose:
 			#print i.type,
 			#if i.type == "control_change": 
 				#print dir(i)
 				#print i.control, 
-			#if i.type == "program_change": 
-				#print dir(i)
-				#print i.program, #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
 			pass
 		
 		#print pretty information
@@ -122,13 +123,13 @@ if __name__ == "__main__":
 	#f = "midis/undertale/Finale.mid"
 	#f = "midis/undertale/Heartbreak.mid"
 	#f = "midis/undertale/Megalovania.mid"
-	#f = "midis/undertale/MIDIlovania.mid"
+	f = "midis/undertale/MIDIlovania.mid"
 	#f = "midis/undertale/Ruins.mid"
 	#f = "midis/undertale/Spider Dance.mid"
 	
 	#holy hell
 	s = True
-	f = "midis/black midi/Death Waltz.mid"
+	#f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/bad apple 4.6 million.mid"#memoryerror
 	#f = "midis/black midi/The Titan_2.mid"
 	#f = "midis/black midi/.mid"
