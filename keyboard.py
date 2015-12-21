@@ -3,6 +3,7 @@ import time, mido
 from operator import mul
 mido.set_backend('mido.backends.pygame')#change this if you use something else
 import audio_renderer as audio
+from instruments import Soundfont
 
 def midoMainloop(gen, port, instruments, verbose=True):
 	prev_print = time.time()
@@ -67,29 +68,14 @@ def main(keyboard=None, midifile=None, verbose=True):
 		raise Exception("No input dumb dumb")
 	
 	gen = audio.generator()
-	instruments = audio.MakeProgramTable()
+	soundfont = Soundfont()
+	instruments = soundfont.instruments
 	
 	#temp
 	gen.instruments = [instruments[0] for _ in xrange(16)]
-	if 0:	
-		#gen.instruments = [audio.sineWave for _ in xrange(16)]
-		#gen.instruments = [audio.triangleWave for _ in xrange(16)]
-		#gen.instruments = [audio.squareWave for _ in xrange(16)]
-		#gen.instruments = [audio.sawtoothWave for _ in xrange(16)]
-		#gen.instruments = [audio.dafuqWave for _ in xrange(16)]
-		for i in xrange(16):
-			pass
-			#gen.instruments[i] = audio.AddAttack2Wave(gen.instruments[i], 0.5)
-			#gen.instruments[i] = audio.AddPitchWobbles2Wave(gen.instruments[i], speed=7, strength=.25)
-			#gen.instruments[i] = audio.AddPitchWobbles2Wave(gen.instruments[i], speed=7, strength=.25, perSecond=True)
-			#gen.instruments[i] = audio.AddVibrato2Wave(gen.instruments[i], speed=15.)
-			#gen.instruments[i] = audio.AddCrush2Wave(gen.instruments[i], 4)
-			#gen.instruments[i] = audio.ChangeWaveOctave(gen.instruments[i], 0)
-		pass
-	
-	gen.instruments[9] = audio.highhatBeat
-	#gen.instruments[9] = audio.snareBeat
-	#gen.instruments[9] = audio.drumBeat
+	gen.instruments[9] = soundfont.highhatBeat
+	#gen.instruments[9] = soundfont.snareBeat
+	#gen.instruments[9] = soundfont.drumBeat
 	
 	#do:
 	stream = audio.play(gen)
@@ -112,11 +98,11 @@ if __name__ == "__main__":
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
 	#f = "midis/Gusty Garden Galaxy.mid"
-	#f = "midis/Hare Hare Yukai.mid"
+	f = "midis/Hare Hare Yukai.mid"
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Makrells.mid"
-	f = "midis/mt-pyre.mid"
+	#f = "midis/mt-pyre.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
 	#f = "midis/Rhythm.mid"
