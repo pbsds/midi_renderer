@@ -11,6 +11,7 @@ def midoMainloop(gen, port, instruments, verbose=True):
 	neededRenderTime = str(round(float(audio.CHUNK)/float(audio.RATE) * 1000., 2)) #ms
 	
 	nq = 0
+	pws = 2.**13
 	for i in port:
 		if i.type == "note_on":
 			nq += 1
@@ -27,7 +28,14 @@ def midoMainloop(gen, port, instruments, verbose=True):
 			#print dir(i)
 			if i.channel <> 9:
 				gen.instruments[i.channel] = instruments[i.program]
-			print "Instrument(%i,%i)"%(i.channel, i.program), #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+				gen.instruments = gen.instruments[:]#apparently this makes it faster?
+			if verbose: print "Instrument(%i,%i)"%(i.channel, i.program), #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+		
+		elif i.type == "pitchwheel": 
+			#print dir(i)
+			gen.set_pitch(i.channel, float(i.pitch)/pws)
+			#if verbose or 1: print "pitch(%i,%.2f)" % (i.channel, float(i.pitch)*2/pws),
+			
 		elif i.type not in ("clock",) and verbose:
 			#print i.type,
 			#if i.type == "control_change": 
@@ -96,6 +104,7 @@ if __name__ == "__main__":
 	
 	#f = "midis/13417_Ballad-of-the-Windfish.mid"
 	#f = "midis/27641_Green-Greens.mid"
+	#f = "midis/circusgalop.mid"
 	#f = "midis/Clock Town 2.mid"
 	#f = "midis/Clock Town.mid"
 	#f = "midis/Darude_-_Sandstorm.mid"
@@ -103,11 +112,11 @@ if __name__ == "__main__":
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
 	#f = "midis/Gusty Garden Galaxy.mid"
-	f = "midis/Hare Hare Yukai.mid"
+	#f = "midis/Hare Hare Yukai.mid"
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Makrells.mid"
-	#f = "midis/mt-pyre.mid"
+	f = "midis/mt-pyre.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
 	#f = "midis/Rhythm.mid"

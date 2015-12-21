@@ -9,7 +9,7 @@ RECORD_SECONDS = 5
 
 #waves:
 def sineWave(p):
-		return math.sin(p*math.pi*2)#slow, names, ech. it hurts
+	return math.sin(p*math.pi*2)#slow, names, ech. it hurts
 def sine3Wave(p):
 		return math.sin(p*math.pi*2)**3#slow, names, ech. it hurts
 def sine5Wave(p):
@@ -19,7 +19,7 @@ def sine7Wave(p):
 def sine9Wave(p):
 		return math.sin(p*math.pi*2)**9#slow, names, ech. it hurts
 def squareWave(p):
-		return 1. if (p%1) > 0.5 else -1.
+		return .8 if (p%1) > 0.5 else -.8
 def sawtoothWave(p):
 	return (p%1)*2. - 1.
 def saw3Wave(p):
@@ -125,25 +125,27 @@ def MakeProgramTable():
 	sitar = ChangeWaveOctave(sitar, change=-1)
 	out[104] = sitar
 	
-	for i in xrange(128): out[i] = squareWave#AddAttack2Wave(squareWave, length=0.4)
+	#for i in xrange(128): out[i] = squareWave#AddAttack2Wave(squareWave, length=0.4)
+	#for i in xrange(128): out[i] = sine3Wave#AddAttack2Wave(squareWave, length=0.4)
+	#for i in xrange(128): out[i] = AddPitchWobbles2Wave(AddAttack2Wave(squareWave, length=0.4), speed=16, strength=0.25)
 	return out
 
 #generator
 class generator():
 	rate = float(RATE)
 	channels = 2
-	
+	pitchrange = 2.0#semitones
 	instruments = [sineWave for _ in xrange(16)]#15 channels instead?
 	
 	def __init__(self):
 		self.notes = [set() for _ in xrange(16)]
-		self.note = []#[i] = [channel, note, velocity, start pos, instrument, frequency/rate]
+		self.note = []#[i] = [channel, note, velocity, start pos, instrument, frequency/rate, wavefunction offset]
 		self.pos = 0#position
-	
+		self.tuning = [0.0 for i in xrange(16)]
 	#input
 	def set_note(self, channel, note, velocity, modify=False):
 		if note not in self.notes[channel]:
-			self.note.append([channel, note, float(velocity)/4, self.pos, self.instruments[channel], self.get_freq(note)/self.rate])
+			self.note.append([channel, note, float(velocity)/7, self.pos, self.instruments[channel], self.get_freq(note + self.tuning[channel])/self.rate, 0.])
 			self.notes[channel].add(note)
 		else:
 			for i, n in enumerate(self.note):
@@ -157,15 +159,24 @@ class generator():
 				del self.note[i]
 				self.notes[channel].remove(note)
 				return
-	
+	def set_pitch(self, channel, pitch):#note + pitch*self.pitchrange()
+		#todo: fix this?
+		#pitch *= self.pitchrange
+		self.tuning[channel] = pitch
+		for i, n in enumerate(self.note):
+			if n[0] == channel:
+				note, startpos, freq = n[1], n[3], n[5]
+				self.note[i][3] = self.pos
+				self.note[i][5] = self.get_freq(note + pitch)/self.rate
+				self.note[i][6] += (self.pos-startpos) * freq
+		
 	def get_frames(self, chunk):#render frames
 		#speedup the name lookup a little
 		#notes = tuple(self.note)
-		notes = self.note[:]
+		notes = self.note[:]#is this a good enought copy? i'm trying to avoid any changes made during rendering
 		
 		if notes:
-			
-			out = np.fromiter((sum(n[4]((i-n[3]) * n[5]) * n[2] for n in notes) for i in map(float, xrange(self.pos, self.pos+chunk))), dtype=np.float32, count=chunk)
+			out = np.fromiter((sum(n[4]((i-n[3]) * n[5] + n[6]) * n[2] for n in notes) for i in map(float, xrange(self.pos, self.pos+chunk))), dtype=np.float32, count=chunk)
 			#out = np.zeros(chunk, dtype=np.float32)
 			#for e, i in enumerate(map(float, xrange(self.pos, self.pos+chunk))):
 				#out[e, :] = sum(n[4]((i-n[3])*n[5]) * n[2] for n in notes)
