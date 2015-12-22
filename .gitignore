@@ -3,9 +3,12 @@
 *.pyc
 *.pyd
 *.pyo
+*.wav
+*.mid
 
 #specific files/folders:
 midis
+
 # OS generated files #
 .DS_Store
 .DS_Store?

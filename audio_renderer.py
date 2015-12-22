@@ -70,8 +70,9 @@ class generator():
 		return self.pack(out)
 	
 	#change this for other tunings:
-	def get_freq(self, note):#tune for c4 = 60 and A = 440Hz
-		return 440.*math.pow(2, float(note-58)/12.)
+	def get_freq(self, note):#tune for a4 = 57(58 if 1-128) and A = 440Hz
+		#return 440.*math.pow(2, float(note-69)/12.)
+		return 440.*math.pow(2, float(note-57)/12.)
 	
 	#internal:
 	def pack(self, frames):#np compatible

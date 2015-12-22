@@ -3,11 +3,12 @@ import math, random
 
 class Soundfont:
 	def __init__(self):
-		self.instruments = self.MakeProgramTable(none=self.squareWave)
+		self.instruments = self.MakeProgramTable(none=self.triangleWave)
 		#self.instruments = self.MakeProgramTable(none=self.sineWave)
 		
 	#need4speed
 	pi2 = math.pi*2
+	#sin = math.sin
 	#Wavefunctions:
 	def sineWave(self, p):
 		return math.sin(p*self.pi2)
@@ -147,13 +148,22 @@ class Soundfont:
 		sitar = self.AddCrush2Wave(guitar, levels=4)
 		sitar = self.CompressWave(sitar, gain=1.5)
 		sitar = self.ChangeWaveOctave(sitar, change=-1)
+		#sitar = self.ChangeWaveOctave(sitar, change=-2)
 		out[104] = sitar
 		
 		#Percussive
 		
 		#Sound effects
 		
-		#for i in xrange(128): out[i] = squareWave#AddAttack2Wave(squareWave, length=0.4)
-		#for i in xrange(128): out[i] = sine3Wave#AddAttack2Wave(squareWave, length=0.4)
-		#for i in xrange(128): out[i] = AddPitchWobbles2Wave(AddAttack2Wave(squareWave, length=0.4), speed=16, strength=0.25)
+		#ech
+		#for i in xrange(128): out[i] = organ
+		#for i in xrange(128): out[i] = self.triangleWave
+		#for i in xrange(128): out[i] = self.squareWave
+		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.squareWave, length=0.4)
+		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.dafuqWave, length=0.4)
+		#for i in xrange(128): out[i] = self.sine3Wave#self.AddAttack2Wave(self.squareWave, length=0.4)
+		
+		#for the dogsong:
+		#for i in xrange(128): out[i] = self.AddPitchWobbles2Wave(self.AddAttack2Wave(self.squareWave, length=0.3), speed=7, strength=0.25)
 		return out
+

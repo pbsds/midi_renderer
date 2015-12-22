@@ -5,43 +5,53 @@ mido.set_backend('mido.backends.pygame')#change this if you use something else
 import audio_renderer as audio
 from instruments import Soundfont
 
-def midoMainloop(gen, port, instruments, verbose=True):
+def HandleMessage(msg, gen, instruments, verbose=False):
+	if msg.type == "note_on":
+		if msg.velocity == 0:
+			gen.stop_note(msg.channel, msg.note)
+		else:
+			gen.set_note(msg.channel, msg.note, float(msg.velocity)/127.)
+		if verbose: print "note(%i,%i)" % (msg.note, msg.velocity),
+	elif msg.type == "note_off":
+		gen.stop_note(msg.channel, msg.note)
+		if verbose: print "note(%msg,0)" % msg.note,
+	elif msg.type == "program_change":
+		#print dir(msg)
+		if msg.channel <> 9:
+			gen.instruments[msg.channel] = instruments[msg.program]
+			gen.instruments = gen.instruments[:]#apparently this makes it faster?
+		if verbose or 1: print "Instrument(%i,%i)" % (msg.channel, msg.program), #changes msg.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+	
+	elif msg.type == "pitchwheel": 
+		#print dir(msg)
+		gen.set_pitch(msg.channel, float(msg.pitch)/8192.)
+		if verbose: print "pitch(%i,%.2f)" % (msg.channel, float(msg.pitch)/8192.),
+	elif msg.type not in ("clock",) and verbose:
+		#print msg.type,
+		#if msg.type == "control_change": 
+			#print dir(msg)
+			#print msg.control, 
+		pass
+
+def PlayMidoPort(gen, port, instruments, verbose=True):
+	stream = audio.play(gen)
+	
 	prev_print = time.time()
 	last_few_renders = []#to keep an average
 	neededRenderRate = str(round(float(audio.RATE)/float(audio.CHUNK), 2))
 	neededRenderTime = str(round(float(audio.CHUNK)/float(audio.RATE) * 1000., 2)) #ms
 	
 	nq = 0
-	pws = 2.**13
-	for i in port:
-		if i.type == "note_on":
-			nq += 1
-			if i.velocity == 0:
-				gen.stop_note(i.channel, i.note)
-			else:
-				gen.set_note(i.channel, i.note, float(i.velocity)/127.)
-			if verbose: print "note(%i,%i)" % (i.note, i.velocity),
-		elif i.type == "note_off":
-			nq += 1
-			gen.stop_note(i.channel, i.note)
-			if verbose: print "note(%i,0)" % i.note,
-		elif i.type == "program_change":
-			#print dir(i)
-			if i.channel <> 9:
-				gen.instruments[i.channel] = instruments[i.program]
-				gen.instruments = gen.instruments[:]#apparently this makes it faster?
-			if verbose: print "Instrument(%i,%i)"%(i.channel, i.program), #changes i.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+	for msg in port:
+		HandleMessage(msg, gen, instruments, verbose)
 		
-		elif i.type == "pitchwheel": 
-			#print dir(i)
-			gen.set_pitch(i.channel, float(i.pitch)/pws)
-			#if verbose or 1: print "pitch(%i,%.2f)" % (i.channel, float(i.pitch)*2/pws),
-			
-		elif i.type not in ("clock",) and verbose:
-			#print i.type,
-			#if i.type == "control_change": 
-				#print dir(i)
-				#print i.control, 
+		if msg.type[:4] == "note":
+			nq += 1
+		elif msg.type not in ("clock",) and verbose:
+			#print msg.type,
+			#if msg.type == "control_change": 
+				#print dir(msg)
+				#print msg.control, 
 			pass
 		
 		#print pretty information
@@ -57,13 +67,44 @@ def midoMainloop(gen, port, instruments, verbose=True):
 			print "\n\nAudio renderer @%.2f/%sHz, %.2fms/%sms, Notes playing: %i, events: %i" % (renderRateAvg, neededRenderRate, renderTimeAvg, neededRenderTime, len(gen.note), nq)
 			prev_print = t
 			nq = 0
-			
+	
+	stream.close()
 
-def main(keyboard=None, midifile=None, verbose=True):
+def RenderMidi(gen, mid, instruments, verbose=True):#generator
+	if verbose:
+		print "render start"
+	t = 0
+	prev_time = 0
+	pos = 0
+	rate = audio.RATE
+	if verbose:
+		l = mid.length#very timeconsuming for black midis
+		print "init loop"
+	r = 0#notes, renders
+	for n, msg in enumerate(mid):
+		if msg.time > 0:
+			t += msg.time
+			chunk = int(t*rate - pos)
+			yield gen.get_frames(chunk)
+			pos += chunk
+			r += 1
+		HandleMessage(msg, gen, instruments)#, False)#redundant
+		
+		#for the bored:
+		if time.time()-prev_time > 1./5.:
+			print "Progress: %.2f%% (%i:%i)  Events: %i  Renders: %i" % ((t/l)*100, int(t)//60, int(t)%60, n+1, r)
+			prev_time = time.time()
+
+def main(keyboard=None, midifile=None, verbose=True, output=None):
 	if keyboard:
+		if output:
+			raise Exception("Realtime output not implemented")#(yet?)
 		port = mido.open_input(keyboard)
 	elif midifile:
-		port =  mido.MidiFile(midifile).play()
+		if output:
+			port =  mido.MidiFile(midifile)
+		else:
+			port =  mido.MidiFile(midifile).play()
 	else:
 		raise Exception("No input dumb dumb")
 	
@@ -78,14 +119,23 @@ def main(keyboard=None, midifile=None, verbose=True):
 	#gen.instruments[9] = soundfont.drumBeat
 	
 	#do:
-	stream = audio.play(gen)
+	if output:
+		import wave
+		f = wave.open(output, "w")
+		f.setnchannels(audio.CHANNELS)
+		f.setsampwidth(2)#more nydamic please?
+		f.setframerate(audio.RATE)
+		for data in RenderMidi(gen, port, instruments, verbose=verbose):
+			f.writeframes(data)
+		f.close()
+	else:
+		PlayMidoPort(gen, port, instruments, verbose=verbose)#blocking
 	
-	midoMainloop(gen, port, instruments, verbose=verbose)#blocking
-	
-	port.close()
+	#if keyboard or output:
+	#	port.close()
 
 if __name__ == "__main__":
-	f, k, s	= None, None, False
+	f, k, s, o	= None, None, False, None
 	#k = mido.get_input_names()[0]#todo: give the user a choice?
 	
 	#f = "midis/13417_Ballad-of-the-Windfish.mid"
@@ -98,7 +148,7 @@ if __name__ == "__main__":
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
 	#f = "midis/Gusty Garden Galaxy.mid"
-	f = "midis/Hare Hare Yukai.mid"
+	#f = "midis/Hare Hare Yukai.mid"
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Makrells.mid"
@@ -112,11 +162,15 @@ if __name__ == "__main__":
 	#f = "midis/Windmill 2.mid"
 	#f = "midis/Windmill.mid"
 	
+	
+	#f = "midis/animal crossing/title.mid"
+	
 	#f = "midis/undertale/Death By Glamour.mid"
 	#f = "midis/undertale/Determination.mid"
 	#f = "midis/undertale/Dogsong.mid"
 	#f = "midis/undertale/Enemy Approaching.mid"
 	#f = "midis/undertale/Finale.mid"
+	#f = "midis/undertale/Ghost Fight.mid"
 	#f = "midis/undertale/Heartbreak.mid"
 	#f = "midis/undertale/Megalovania.mid"
 	#f = "midis/undertale/MIDIlovania.mid"
@@ -126,11 +180,15 @@ if __name__ == "__main__":
 	#holy hell
 	s = True
 	#f = "midis/black midi/Death Waltz.mid"
-	#f = "midis/black midi/bad apple 4.6 million.mid"#memoryerror
-	#f = "midis/black midi/The Titan_2.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
+	#f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror
+	f = "midis/black midi/TheSuperMarioBros2 - The Titan_2.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"
 	#f = "midis/black midi/.mid"
 	
-	main(keyboard=k, midifile=f, verbose=not s)
+	o = "out.wav"; s = False
+	main(keyboard=k, midifile=f, verbose=not s, output = o)
 	
 
 
