@@ -44,6 +44,29 @@ class Soundfont:
 			return p-2
 		else:
 			return 1-p
+	def trianglesWave(self, p):
+		# /  \  |
+		#/    \/ \
+		#0--1--2--3--4
+		#         \ /
+		#          |
+		#p = (p%1)*4
+		#p = ((p/2)%1)*4
+		p = (p%2)*2
+		if p <= 1:
+			return p*0.7
+		elif p <= 2:
+			#return (2-p)*0.7
+			return 1.4-p*0.7
+		elif p <= 2.5:
+			#return (p*2-4)*0.7
+			return p*1.4-2.8
+		elif p <= 3.5:
+			#return (5-p*2)*0.7
+			return 3.5-p*1.4
+		else:
+			#return (p*2-7)*0.7
+			return p*1.4-4.9
 	#modifiers:
 	def AddAttack2Wave(self, wave, length=0.5):#length is number of seconds untill the velocity is halved for A4
 		def NewWave(p):
@@ -84,7 +107,11 @@ class Soundfont:
 	def snareBeat(self, p):
 		return min(max((random.random()*2-1) * max(2-p/24, 0), -1), 1)
 	def drumBeat(self, p):
-		return self.triangleWave(math.sqrt(3.6*p))*1.2
+		return self.triangleWave(math.sqrt(4*p))*1.2
+	def drum2Beat(self, p):
+		return self.triangleWave((4*p)**0.56)*1.2
+	def drum2sBeat(self, p):
+		return self.sineWave((4*p)**0.6)*1.2
 	#The soundfont:
 	def MakeProgramTable(self, n=128, none=None):
 		if not none:
@@ -126,6 +153,10 @@ class Soundfont:
 		for i in xrange(29, 31): out[i] = overdrive
 		
 		#bass
+		bass = self.AddAttack2Wave(self.trianglesWave, length=0.10)
+		
+		for i in xrange(32, 41): out[i] = bass
+		
 		
 		#Strings
 		
@@ -143,6 +174,7 @@ class Soundfont:
 		
 		#Synth effects
 		pass
+		for i in xrange(96, 104): out[i] = lambda x: 0.
 		
 		#ethnic
 		sitar = self.AddCrush2Wave(guitar, levels=4)
@@ -153,15 +185,22 @@ class Soundfont:
 		
 		#Percussive
 		
+		out[117] = self.drum2Beat#Melodic Drum
+		
 		#Sound effects
+		pass
+		for i in xrange(120,128): out[i] = lambda x: 0.
 		
 		#ech
 		#for i in xrange(128): out[i] = organ
 		#for i in xrange(128): out[i] = self.triangleWave
 		#for i in xrange(128): out[i] = self.squareWave
 		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.squareWave, length=0.4)
+		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.triangleWave, length=0.4)
 		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.dafuqWave, length=0.4)
 		#for i in xrange(128): out[i] = self.sine3Wave#self.AddAttack2Wave(self.squareWave, length=0.4)
+		#for i in xrange(128): out[i] = self.ChangeWaveOctave(lambda p: self.triangleWave(p if p%1 < 0.5 else (p%1 - 0.5)*2)**2, change=-1)
+		#for i in xrange(128): out[i] = self.trianglesWave
 		
 		#for the dogsong:
 		#for i in xrange(128): out[i] = self.AddPitchWobbles2Wave(self.AddAttack2Wave(self.squareWave, length=0.3), speed=7, strength=0.25)

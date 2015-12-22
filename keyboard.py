@@ -14,7 +14,7 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 		if verbose: print "note(%i,%i)" % (msg.note, msg.velocity),
 	elif msg.type == "note_off":
 		gen.stop_note(msg.channel, msg.note)
-		if verbose: print "note(%msg,0)" % msg.note,
+		if verbose: print "note(%i,0)" % msg.note,
 	elif msg.type == "program_change":
 		#print dir(msg)
 		if msg.channel <> 9:
@@ -47,8 +47,8 @@ def PlayMidoPort(gen, port, instruments, verbose=True):
 		
 		if msg.type[:4] == "note":
 			nq += 1
-		elif msg.type not in ("clock",) and verbose:
-			#print msg.type,
+		elif msg.type not in ("clock", "program_change", "pitchwheel") and verbose:
+			print msg.type,
 			#if msg.type == "control_change": 
 				#print dir(msg)
 				#print msg.control, 
@@ -79,6 +79,7 @@ def RenderMidi(gen, mid, instruments, verbose=True):#generator
 	rate = audio.RATE
 	if verbose:
 		l = mid.length#very timeconsuming for black midis
+		ls = "%i:%s" % (int(l)//60, str(int(l)%60).zfill(2))
 		print "init loop"
 	r = 0#notes, renders
 	for n, msg in enumerate(mid):
@@ -92,7 +93,7 @@ def RenderMidi(gen, mid, instruments, verbose=True):#generator
 		
 		#for the bored:
 		if time.time()-prev_time > 1./5.:
-			print "Progress: %.2f%% (%i:%i)  Events: %i  Renders: %i" % ((t/l)*100, int(t)//60, int(t)%60, n+1, r)
+			print "Progress: %.2f%% (%i:%s / %s)  Events: %i  Renders: %i" % ((t/l)*100, int(t)//60, str(int(t)%60).zfill(2), ls, n+1, r)
 			prev_time = time.time()
 
 def main(keyboard=None, midifile=None, verbose=True, output=None):
@@ -151,8 +152,9 @@ if __name__ == "__main__":
 	#f = "midis/Hare Hare Yukai.mid"
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
+	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
 	#f = "midis/Makrells.mid"
-	#f = "midis/mt-pyre.mid"
+	f = "midis/mt-pyre.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
 	#f = "midis/Rhythm.mid"
@@ -182,7 +184,7 @@ if __name__ == "__main__":
 	#f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror
-	f = "midis/black midi/TheSuperMarioBros2 - The Titan_2.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - The Titan_2.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"
 	#f = "midis/black midi/.mid"
