@@ -9,6 +9,7 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 	if msg.type == "note_on":
 		if msg.velocity == 0:
 			gen.stop_note(msg.channel, msg.note)
+		#elif msg.channel == 7:#used to solo out a track
 		else:
 			gen.set_note(msg.channel, msg.note, float(msg.velocity)/127.)
 		if verbose: print "note(%i,%i)" % (msg.note, msg.velocity),
@@ -16,21 +17,36 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 		gen.stop_note(msg.channel, msg.note)
 		if verbose: print "note(%i,0)" % msg.note,
 	elif msg.type == "program_change":
-		#print dir(msg)
 		if msg.channel <> 9:
 			gen.instruments[msg.channel] = instruments[msg.program]
 			gen.instruments = gen.instruments[:]#apparently this makes it faster?
-		if verbose or 1: print "Instrument(%i,%i)" % (msg.channel, msg.program), #changes msg.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
+		if verbose: print "Instrument(%i,%i)" % (msg.channel, msg.program), #changes msg.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
 	
 	elif msg.type == "pitchwheel": 
-		#print dir(msg)
 		gen.set_pitch(msg.channel, float(msg.pitch)/8192.)
 		if verbose: print "pitch(%i,%.2f)" % (msg.channel, float(msg.pitch)/8192.),
+	
+	elif msg.type == "control_change":# http://www.midi.org/techspecs/midimessages.php#3
+		if msg.control == 7:#channel colume
+			if verbose: print "volume(%i,%i)" % (msg.channel, msg.value),
+			gen.set_volume(msg.channel, float(msg.value)/127.)
+		elif msg.control == 39:
+			pass #todo: 39 is the fine part of volume control
+		elif msg.control == 10:#pan (probably won't be implemented)
+			pass
+		elif msg.control in (91, 92, 93, 94, 95):#chorus, reverb and such levels. maybe implement later?
+			pass
+		#elif msg.control == 1:
+		#	pass#what even?
+		#elif msg.control == :
+		#	pass
+		elif msg.control in (6, 38, 100, 101):#what even are these?
+			pass
+		else:
+			if verbose: print "unknown-control(%i,%i,%i)" % (msg.channel, msg.control, msg.value),
+		#print msg.control, msg.value, msg.channel
 	elif msg.type not in ("clock",) and verbose:
 		#print msg.type,
-		#if msg.type == "control_change": 
-			#print dir(msg)
-			#print msg.control, 
 		pass
 
 def PlayMidoPort(gen, port, instruments, verbose=True):
@@ -47,7 +63,7 @@ def PlayMidoPort(gen, port, instruments, verbose=True):
 		
 		if msg.type[:4] == "note":
 			nq += 1
-		elif msg.type not in ("clock", "program_change", "pitchwheel") and verbose:
+		elif msg.type not in ("clock", "program_change", "pitchwheel", "control_change") and verbose:
 			print msg.type,
 			#if msg.type == "control_change": 
 				#print dir(msg)
@@ -92,7 +108,7 @@ def RenderMidi(gen, mid, instruments, verbose=True):#generator
 		HandleMessage(msg, gen, instruments)#, False)#redundant
 		
 		#for the bored:
-		if time.time()-prev_time > 1./5.:
+		if verbose and time.time()-prev_time > 1./5.:
 			print "Progress: %.2f%% (%i:%s / %s)  Events: %i  Renders: %i" % ((t/l)*100, int(t)//60, str(int(t)%60).zfill(2), ls, n+1, r)
 			prev_time = time.time()
 
@@ -149,12 +165,11 @@ if __name__ == "__main__":
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
 	#f = "midis/Gusty Garden Galaxy.mid"
-	#f = "midis/Hare Hare Yukai.mid"
+	#f = "midis/Hare Hare Yukai.mid"; s=True
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
 	#f = "midis/Makrells.mid"
-	f = "midis/mt-pyre.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
 	#f = "midis/Rhythm.mid"
@@ -175,12 +190,62 @@ if __name__ == "__main__":
 	#f = "midis/undertale/Ghost Fight.mid"
 	#f = "midis/undertale/Heartbreak.mid"
 	#f = "midis/undertale/Megalovania.mid"
-	#f = "midis/undertale/MIDIlovania.mid"
+	f = "midis/undertale/MIDIlovania.mid"
 	#f = "midis/undertale/Ruins.mid"
 	#f = "midis/undertale/Spider Dance.mid"
 	
+	#f = "midis/hoenn/battle-with-rayquaza.mid"
+	#f = "midis/hoenn/cable-car.mid"
+	#f = "midis/hoenn/credits.mid"
+	#f = "midis/hoenn/eternal-sunshine.mid"
+	#f = "midis/hoenn/ever-grande-city.mid"
+	#f = "midis/hoenn/evolving.mid"
+	#f = "midis/hoenn/fortree-city.mid"
+	#f = "midis/hoenn/game-corner.mid"
+	#f = "midis/hoenn/groudon-kyogre-battle.mid"
+	#f = "midis/hoenn/gym-leader-battle-jazz-remix-.mid"
+	#f = "midis/hoenn/gym-leader-battle.mid"
+	#f = "midis/hoenn/gym.mid"
+	#f = "midis/hoenn/hall-of-fame.mid"
+	#f = "midis/hoenn/help-me.mid"
+	#f = "midis/hoenn/lilycove-town-2-.mid"
+	#f = "midis/hoenn/littleroot-town-2-.mid"; s=True
+	#f = "midis/hoenn/littleroot-town.mid"
+	#f = "midis/hoenn/meteor-falls.mid"
+	#f = "midis/hoenn/mt-chimney.mid"
+	#f = "midis/hoenn/mt-pyre.mid"
+	#f = "midis/hoenn/oldale-town-2-.mid"
+	#f = "midis/hoenn/oldale-town.mid"
+	#f = "midis/hoenn/petalburg-city-2-.mid"
+	#f = "midis/hoenn/petalburg-city.mid"
+	#f = "midis/hoenn/regi-battle.mid"
+	#f = "midis/hoenn/riding-the-bike.mid"
+	#f = "midis/hoenn/rival-theme.mid"
+	#f = "midis/hoenn/route-101-102-103.mid"
+	#f = "midis/hoenn/route-104-115-116-2-.mid"
+	#f = "midis/hoenn/route-104-115-116.mid"
+	f = "midis/hoenn/route-110-111-112.mid"
+	#f = "midis/hoenn/route-111-desert.mid"
+	#f = "midis/hoenn/route-113.mid"
+	#f = "midis/hoenn/route-118-119.mid"
+	#f = "midis/hoenn/route-120-121.mid"
+	#f = "midis/hoenn/route-123-intro.mid"
+	#f = "midis/hoenn/rustboro-city.mid"
+	#f = "midis/hoenn/sailing.mid"
+	#f = "midis/hoenn/show-me-around.mid"
+	#f = "midis/hoenn/slateport-city.mid"
+	#f = "midis/hoenn/sootopolis.mid"
+	#f = "midis/hoenn/surfing.mid"
+	#f = "midis/hoenn/title-screen.mid"
+	#f = "midis/hoenn/trick-house.mid"
+	#f = "midis/hoenn/tv-theme.mid"
+	#f = "midis/hoenn/verdanturf-town-2-.mid"
+	#f = "midis/hoenn/verdanturf-town.mid"
+	#f = "midis/hoenn/victory-road.mid"
+	#f = "midis/hoenn/wild-pokemon-battle.mid"
+	
 	#holy hell
-	s = True
+	#s = True
 	#f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror
@@ -189,7 +254,7 @@ if __name__ == "__main__":
 	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"
 	#f = "midis/black midi/.mid"
 	
-	o = "out.wav"; s = False
+	#o = "out.wav"; s = False
 	main(keyboard=k, midifile=f, verbose=not s, output = o)
 	
 

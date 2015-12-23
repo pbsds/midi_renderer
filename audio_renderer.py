@@ -16,18 +16,21 @@ class generator():
 	
 	def __init__(self):
 		self.notes = [set() for _ in xrange(16)]
-		self.note = []#[i] = [channel, note, velocity, start pos, instrument, frequency/rate, wavefunction offset]
+		self.note = []#[i] = [channel, note, velocity, start pos, instrument, frequency/rate, wavefunction offset, raw velocity]
 		self.pos = 0#position
 		self.pitches = [0.0 for i in xrange(16)]
+		self.volumes = [1.0 for i in xrange(16)]
 	#input
 	def set_note(self, channel, note, velocity, modify=False):
+		velocity = float(velocity)/6
 		if note not in self.notes[channel]:
-			self.note.append([channel, note, float(velocity)/7, self.pos, self.instruments[channel], self.get_freq(note + self.pitches[channel])/self.rate, 0.])
+			self.note.append([channel, note, velocity * self.volumes[channel], self.pos, self.instruments[channel], self.get_freq(note + self.pitches[channel])/self.rate, 0., velocity])
 			self.notes[channel].add(note)
 		else:
 			for i, n in enumerate(self.note):
 				if n[0] == channel and n[1] == note:
-					self.note[i][2] = float(velocity)/4
+					self.note[i][2] = velocity * self.volumes[channel]
+					self.note[i][7] = velocity
 					if not modify: self.note[i][3] = self.pos
 					return
 	def stop_note(self, channel, note):
@@ -45,6 +48,12 @@ class generator():
 				self.note[i][3] = self.pos
 				self.note[i][5] = self.get_freq(note + pitch)/self.rate
 				self.note[i][6] += (self.pos-startpos) * freq
+	def set_volume(self, channel, volume):
+		volume = math.log10(volume*9. + 1)
+		self.volumes[channel] = volume
+		for i, n in enumerate(self.note):
+			if n[0] == channel:
+				self.note[i][2] = n[7]*volume
 		
 	def get_frames(self, chunk):#render frames
 		#speedup the name lookup a little:
