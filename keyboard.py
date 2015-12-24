@@ -163,9 +163,7 @@ if __name__ == "__main__":
 	#f = "midis/Darude_-_Sandstorm.mid"
 	#f = "midis/file.mid"
 	#f = "midis/gerudo valley.mid"
-	#f = "midis/Good Egg Galaxy.mid"
-	#f = "midis/Gusty Garden Galaxy.mid"
-	f = "midis/Hare Hare Yukai.mid"; s=True
+	#f = "midis/Hare Hare Yukai.mid"; s=True
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
@@ -179,6 +177,11 @@ if __name__ == "__main__":
 	#f = "midis/Windmill 2.mid"
 	#f = "midis/Windmill.mid"
 	
+	#f = "midis/mario galaxy/Good Egg Galaxy.mid"
+	#f = "midis/mario galaxy/Gusty Garden Galaxy.mid"
+	#f = "midis/mario galaxy/Main Theme.mid"
+	#f = "midis/mario galaxy/Megaleg.mid"
+	f = "midis/mario galaxy/Planetarium.mid"
 	
 	#f = "midis/animal crossing/title.mid"
 	

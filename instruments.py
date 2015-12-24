@@ -222,9 +222,10 @@ class Soundfont:
 		#Synth effects
 		pass
 		for i in xrange(96, 104): out[i] = lambda x: 0.
-		crystal = self.AddAttack2Wave(self.squareWave, length=0.08)#crystal
+		crystal = self.AddAttack2Wave(self.saw3Wave, length=0.08)
 		crystal = self.ChangeWaveOctave(crystal, change=-1)
-		out[98] = crystal
+		#out[98] = crystal#crystal
+		out[98] = self.CompressWave(crystal, gain=1.4)#crystal
 		
 		#ethnic
 		sitar = self.AddCrush2Wave(guitar, levels=4)

@@ -21,7 +21,6 @@ class generator():
 		self.pitches = [0.0 for i in xrange(16)]
 		self.volumes = [1.0 for i in xrange(16)]
 	#input
-	#vel, start, freq, offset
 	def set_note(self, channel, note, velocity, modify=False):
 		velocity = float(velocity)/6
 		if note not in self.notes[channel]:
