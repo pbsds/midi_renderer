@@ -44,6 +44,7 @@ class Soundfont:
 			#return p-2
 			return p*0.7-1.4
 		else:
+			#return 1-p
 			return 0.7-p*0.7
 	def trianglesWave(self, p):
 		# /  \  |
@@ -221,6 +222,9 @@ class Soundfont:
 		#Synth effects
 		pass
 		for i in xrange(96, 104): out[i] = lambda x: 0.
+		crystal = self.AddAttack2Wave(self.squareWave, length=0.08)#crystal
+		crystal = self.ChangeWaveOctave(crystal, change=-1)
+		out[98] = crystal
 		
 		#ethnic
 		sitar = self.AddCrush2Wave(guitar, levels=4)

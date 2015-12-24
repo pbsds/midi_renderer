@@ -165,7 +165,7 @@ if __name__ == "__main__":
 	#f = "midis/gerudo valley.mid"
 	#f = "midis/Good Egg Galaxy.mid"
 	#f = "midis/Gusty Garden Galaxy.mid"
-	#f = "midis/Hare Hare Yukai.mid"; s=True
+	f = "midis/Hare Hare Yukai.mid"; s=True
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
@@ -190,7 +190,7 @@ if __name__ == "__main__":
 	#f = "midis/undertale/Ghost Fight.mid"
 	#f = "midis/undertale/Heartbreak.mid"
 	#f = "midis/undertale/Megalovania.mid"
-	f = "midis/undertale/MIDIlovania.mid"
+	#f = "midis/undertale/MIDIlovania.mid"
 	#f = "midis/undertale/Ruins.mid"
 	#f = "midis/undertale/Spider Dance.mid"
 	
@@ -224,7 +224,7 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/route-101-102-103.mid"
 	#f = "midis/hoenn/route-104-115-116-2-.mid"
 	#f = "midis/hoenn/route-104-115-116.mid"
-	f = "midis/hoenn/route-110-111-112.mid"
+	#f = "midis/hoenn/route-110-111-112.mid"
 	#f = "midis/hoenn/route-111-desert.mid"
 	#f = "midis/hoenn/route-113.mid"
 	#f = "midis/hoenn/route-118-119.mid"
@@ -247,11 +247,12 @@ if __name__ == "__main__":
 	#holy hell
 	#s = True
 	#f = "midis/black midi/Death Waltz.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - 3k 3,000,000.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - The Titan_2.mid"
-	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"
-	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"#memoryerror
+	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"#memoryerror
 	#f = "midis/black midi/.mid"
 	
 	#o = "out.wav"; s = False

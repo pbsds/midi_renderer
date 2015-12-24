@@ -21,10 +21,18 @@ class generator():
 		self.pitches = [0.0 for i in xrange(16)]
 		self.volumes = [1.0 for i in xrange(16)]
 	#input
+	#vel, start, freq, offset
 	def set_note(self, channel, note, velocity, modify=False):
 		velocity = float(velocity)/6
 		if note not in self.notes[channel]:
-			self.note.append([channel, note, velocity * self.volumes[channel], self.pos, self.instruments[channel], self.get_freq(note + self.pitches[channel])/self.rate, 0., velocity])
+			self.note.append([channel,
+			                  note,
+			                  velocity * self.volumes[channel],
+			                  self.pos,
+			                  self.instruments[channel],
+			                  self.get_freq(note + self.pitches[channel])/self.rate,
+			                  0.,
+			                  velocity])
 			self.notes[channel].add(note)
 		else:
 			for i, n in enumerate(self.note):
@@ -49,7 +57,7 @@ class generator():
 				self.note[i][5] = self.get_freq(note + pitch)/self.rate
 				self.note[i][6] += (self.pos-startpos) * freq
 	def set_volume(self, channel, volume):
-		volume = math.log10(volume*9. + 1)
+		volume = math.log10(volume*9. + 1)#is this right?
 		self.volumes[channel] = volume
 		for i, n in enumerate(self.note):
 			if n[0] == channel:
@@ -62,22 +70,22 @@ class generator():
 		
 		if notes:
 			out = np.fromiter((sum(n[4]((i-n[3]) * n[5] + n[6]) * n[2] for n in notes) for i in map(float, xrange(self.pos, self.pos+chunk))), dtype=np.float32, count=chunk)
+			
 			#out = np.zeros(chunk, dtype=np.float32)
 			#for e, i in enumerate(map(float, xrange(self.pos, self.pos+chunk))):
-				#out[e, :] = sum(n[4]((i-n[3])*n[5]) * n[2] for n in notes)
-				#out[e] = sum(n[4]((i-n[3])*n[5]) * n[2] for n in notes)
+			#	out[e] = sum(n[4]((i-n[3])*n[5] + n[6]) * n[2] for n in notes)
 			
 			if self.channels > 1:
 				out = np.array([out]*self.channels)
+			
+			self.pos += chunk
+			np.clip(out, -1, 1, out=out)
+			return self.pack(out)
 		else:
-			out = np.zeros((self.channels, chunk), dtype=np.float32)
-				
-		self.pos += chunk
-		
-		np.clip(out, -1, 1, out=out)
-		
-		return self.pack(out)
-	
+			self.pos += chunk
+			#out = np.zeros((self.channels, chunk), dtype=np.float32)
+			#return self.pack(out)
+			return "\0\0" * (self.channels * chunk)
 	#change this for other tunings:
 	def get_freq(self, note):#tune for a4 = 57(58 if 1-128) and A = 440Hz
 		#return 440.*math.pow(2, float(note-69)/12.)
