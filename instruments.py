@@ -8,6 +8,7 @@ class Soundfont:
 		
 	#need4speed
 	pi2 = math.pi*2
+	pi8 = math.pi*8
 	#sin = math.sin
 	#Wavefunctions:
 	def sineWave(self, p):
@@ -79,6 +80,15 @@ class Soundfont:
 		#from
 		#http://www.feilding.net/sfuad/musi3012-01/html/lectures/005_sound_IV.htm
 		return (-33623.26*p**9 + 142968.91*p**8 - 245850.26*p**7 + 217707.81*p**6 - 103541.23*p**5 + 24034.6*p**4 - 1388.21*p**3 - 349.88*p**2 + 41.49*p) / 2
+	def violinWave(self, p):
+		#f(x) = sin(2π x) + 0.6sin(8π x)
+		#f(x) a g(x)² abs(sin(π x))
+		#http://www.feilding.net/sfuad/musi3012-01/images/lectures/violin.gif
+		#return (0.5-(p%1))**2 * 19 * (math.sin(p*self.pi2) + 0.7*math.sin(p*self.pi8)) * abs(math.sin(math.pi*p))
+		#return (0.5-(p%1))**2 * 19 * (math.sin(p*self.pi2) + 0.7*math.sin(p*self.pi8)) * abs(math.sin(math.pi*p))
+		
+		#http://static1.squarespace.com/static/528952fde4b088c60f4cae09/t/5496326ce4b0630c86f263a3/1419129455996/
+		return 0.
 	#modifiers:
 	def AddAttack2Wave(self, wave, length=0.5):#length is number of seconds untill the velocity is halved for A4
 		def NewWave(p):
@@ -173,6 +183,8 @@ class Soundfont:
 		
 		
 		#Strings
+		violin = self.violinWave
+		#out[]
 		
 		out[47] = self.timpaniBeat#timpani (drum)
 		
@@ -250,7 +262,7 @@ class Soundfont:
 		for i in xrange(120,128): out[i] = lambda x: 0.
 		
 		#ech
-		#for i in xrange(128): out[i] = flute
+		#for i in xrange(128): out[i] = violin
 		#for i in xrange(128): out[i] = self.triangleWave
 		#for i in xrange(128): out[i] = self.sineWave
 		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.squareWave, length=0.4)

@@ -167,7 +167,7 @@ if __name__ == "__main__":
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
-	#f = "midis/Makrells.mid"
+	f = "midis/Makrells.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
 	#f = "midis/Rhythm.mid"
@@ -181,7 +181,7 @@ if __name__ == "__main__":
 	#f = "midis/mario galaxy/Gusty Garden Galaxy.mid"
 	#f = "midis/mario galaxy/Main Theme.mid"
 	#f = "midis/mario galaxy/Megaleg.mid"
-	f = "midis/mario galaxy/Planetarium.mid"
+	#f = "midis/mario galaxy/Planetarium.mid"
 	
 	#f = "midis/animal crossing/title.mid"
 	
@@ -215,7 +215,7 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/littleroot-town-2-.mid"; s=True
 	#f = "midis/hoenn/littleroot-town.mid"
 	#f = "midis/hoenn/meteor-falls.mid"
-	#f = "midis/hoenn/mt-chimney.mid"
+	f = "midis/hoenn/mt-chimney.mid"
 	#f = "midis/hoenn/mt-pyre.mid"
 	#f = "midis/hoenn/oldale-town-2-.mid"
 	#f = "midis/hoenn/oldale-town.mid"
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/wild-pokemon-battle.mid"
 	
 	#holy hell
-	#s = True
+	s = True
 	#f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - 3k 3,000,000.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
@@ -258,7 +258,7 @@ if __name__ == "__main__":
 	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"#memoryerror
 	#f = "midis/black midi/.mid"
 	
-	#o = "out.wav"; s = False
+	#o = "out.wav"#; s = False
 	main(keyboard=k, midifile=f, verbose=not s, output = o)
 	
 
