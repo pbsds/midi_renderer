@@ -88,7 +88,8 @@ class Soundfont:
 		#return (0.5-(p%1))**2 * 19 * (math.sin(p*self.pi2) + 0.7*math.sin(p*self.pi8)) * abs(math.sin(math.pi*p))
 		
 		#http://static1.squarespace.com/static/528952fde4b088c60f4cae09/t/5496326ce4b0630c86f263a3/1419129455996/
-		return 0.
+		return math.sin(math.sqrt(p%1)*self.pi2)
+		#return math.sin((p%1)**2 *self.pi2)
 	#modifiers:
 	def AddAttack2Wave(self, wave, length=0.5):#length is number of seconds untill the velocity is halved for A4
 		def NewWave(p):

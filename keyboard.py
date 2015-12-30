@@ -5,6 +5,46 @@ mido.set_backend('mido.backends.pygame')#change this if you use something else
 import audio_renderer as audio
 from instruments import Soundfont
 
+#midifile player, memorysaving generator style
+def iterMid(mid):
+	tracks = [iter(i) for i in mid.tracks]
+	now = 0#ticks
+	nows = [0 for _ in tracks]
+	nexts = [next(track, False) for track in tracks]
+	
+	seconds_per_tick = mid._get_seconds_per_tick(500000)#default
+	
+	while 1:
+		m = None
+		c = -1
+		for i, message in enumerate(nexts):#message.time is in ticks
+			if message and (m==None or message.time + nows[i] - now < m):
+				c = i
+				m = message.time + nows[i] - now
+		
+		if c >= 0:
+			nows[c] += nexts[c].time
+			t = nows[c] - now
+			if t:
+				yield nexts[c].copy(time=t*seconds_per_tick)
+			else:
+				yield nexts[c].copy(time=0)
+			now = nows[c]
+			
+			if nexts[c].type == "set_tempo":
+				seconds_per_tick = mid._get_seconds_per_tick(nexts[c].tempo)
+			
+			#nexts[c] = next(tracks[c], False)
+			while 1:#ignores metamessaages as long as it doesn't mess up the tempo changes
+				nexts[c] = next(tracks[c], False)
+				if isinstance(nexts[c], mido.MetaMessage) and nexts[c].type <> "set_tempo":
+					nows[c] += nexts[c].time
+					continue
+				break
+		else:
+			break
+
+#main
 def HandleMessage(msg, gen, instruments, verbose=False):
 	if msg.type == "note_on":
 		if msg.velocity == 0:
@@ -86,7 +126,7 @@ def PlayMidoPort(gen, port, instruments, verbose=True):
 	
 	stream.close()
 
-def RenderMidi(gen, mid, instruments, verbose=True):#generator
+def RenderMidi(gen, mid, instruments, verbose=True, saveMemory=True):#generator
 	if verbose:
 		print "render start"
 	t = 0
@@ -94,11 +134,15 @@ def RenderMidi(gen, mid, instruments, verbose=True):#generator
 	pos = 0
 	rate = audio.RATE
 	if verbose:
-		l = mid.length#very timeconsuming for black midis
+		if saveMemory:#undetermined wether slower or not, but saves A LOT of memory
+			l = sum(i.time for i in iterMid(mid))
+		else:
+			l = mid.length#very timeconsuming for black midis
 		ls = "%i:%s" % (int(l)//60, str(int(l)%60).zfill(2))
+		epoch = time.time()
 		print "init loop"
 	r = 0#notes, renders
-	for n, msg in enumerate(mid):
+	for n, msg in enumerate(iterMid(mid) if saveMemory else mid):
 		if msg.time > 0:
 			t += msg.time
 			chunk = int(t*rate - pos)
@@ -109,7 +153,7 @@ def RenderMidi(gen, mid, instruments, verbose=True):#generator
 		
 		#for the bored:
 		if verbose and time.time()-prev_time > 1./5.:
-			print "Progress: %.2f%% (%i:%s / %s)  Events: %i  Renders: %i" % ((t/l)*100, int(t)//60, str(int(t)%60).zfill(2), ls, n+1, r)
+			print "Progress: %.2f%% (%i:%s / %s)  Events: %i  Renders: %i  Time: %.2fs" % ((t/l)*100, int(t)//60, str(int(t)%60).zfill(2), ls, n+1, r, time.time()-epoch)
 			prev_time = time.time()
 
 def main(keyboard=None, midifile=None, verbose=True, output=None):
@@ -215,7 +259,7 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/littleroot-town-2-.mid"; s=True
 	#f = "midis/hoenn/littleroot-town.mid"
 	#f = "midis/hoenn/meteor-falls.mid"
-	f = "midis/hoenn/mt-chimney.mid"
+	#f = "midis/hoenn/mt-chimney.mid"
 	#f = "midis/hoenn/mt-pyre.mid"
 	#f = "midis/hoenn/oldale-town-2-.mid"
 	#f = "midis/hoenn/oldale-town.mid"
@@ -250,15 +294,18 @@ if __name__ == "__main__":
 	#holy hell
 	s = True
 	#f = "midis/black midi/Death Waltz.mid"
+	f = "midis/black midi/EVANS_ZUMN_finished_AS.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - 3k 3,000,000.mid"#memoryerror
+	#f = "midis/black midi/TheSuperMarioBros2 - Armageddon to Archeopterix and Icaria 4.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
+	#f = "midis/black midi/TheSuperMarioBros2 - Rainbow trololo black 1.5 million notes.mid"#memoryerror without iterMid
 	#f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - The Titan_2.mid"
-	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"#memoryerror
-	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"#memoryerror
+	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"#memoryerror without iterMid
+	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"#memoryerror without iterMid
 	#f = "midis/black midi/.mid"
 	
-	#o = "out.wav"#; s = False
+	o = "out.wav"; s = False
 	main(keyboard=k, midifile=f, verbose=not s, output = o)
 	
 
