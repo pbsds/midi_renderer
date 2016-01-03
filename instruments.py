@@ -136,7 +136,8 @@ class Soundfont:
 	def drum2sBeat(self, p):
 		return self.sineWave((4*p)**0.6)*1.2
 	def timpaniBeat(self, p):
-		return self.sineWave(math.sqrt(4*p))*0.8 + self.triangleWave(math.sqrt(16*p))*0.6 + self.triangleWave(math.sqrt(8*p))*0.4
+		#return self.sineWave(math.sqrt(4*p))*0.8 + self.triangleWave(math.sqrt(16*p))*0.6 + self.triangleWave(math.sqrt(8*p))*0.4
+		return (self.triangleWave(math.sqrt(p)*6)*0.5 + self.sineWave(math.sqrt(4*p))*0.8) / (1. + p/220.) + self.sawtoothWave(p/2)/(2.5 + p/10.)
 	#The soundfont:
 	def MakeProgramTable(self, n=128, none=None):
 		if not none:
@@ -263,15 +264,17 @@ class Soundfont:
 		for i in xrange(120,128): out[i] = lambda x: 0.
 		
 		#ech
+		#for i in xrange(128): out[i] = bass
 		#for i in xrange(128): out[i] = violin
 		#for i in xrange(128): out[i] = self.triangleWave
 		#for i in xrange(128): out[i] = self.sineWave
+		#for i in xrange(128): out[i] = self.squareWave
+		#for i in xrange(128): out[i] = self.sawtoothWave
 		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.squareWave, length=0.4)
 		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.triangleWave, length=0.4)
 		#for i in xrange(128): out[i] = self.AddAttack2Wave(self.dafuqWave, length=0.4)
 		#for i in xrange(128): out[i] = self.sine3Wave#self.AddAttack2Wave(self.squareWave, length=0.4)
-		#for i in xrange(128): out[i] = self.ChangeWaveOctave(lambda p: self.triangleWave(p if p%1 < 0.5 else (p%1 - 0.5)*2)**2, change=-1)
-		#for i in xrange(128): out[i] = self.trianglesWave
+		#for i in xrange(128): out[i] = bass
 		
 		#for the dogsong:
 		#for i in xrange(128): out[i] = self.AddPitchWobbles2Wave(self.AddAttack2Wave(self.squareWave, length=0.3), speed=7, strength=0.25)

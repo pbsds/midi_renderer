@@ -1,11 +1,13 @@
 #!python2
-import time, mido
+import time, mido, pyaudio
 from operator import mul
 mido.set_backend('mido.backends.pygame')#change this if you use something else
 import audio_renderer as audio
 from instruments import Soundfont
 
-#midifile player, memorysaving generator style
+#midifile player/merge_tracks + convert time to seconds, memorysaving jit generator style
+#undetermined wether slower or not, but saves A LOT of memory at least. 
+#It avoids having to sort all the messages in a huge list, but then again, sorts a few at a using python insted of c
 def iterMid(mid):
 	tracks = [iter(i) for i in mid.tracks]
 	now = 0#ticks
@@ -44,7 +46,47 @@ def iterMid(mid):
 		else:
 			break
 
-#main
+#computer keyboard "port"
+#KEYS = "awsedrftghujikol"; C4 = "d"
+KEYS = "awsedftgyhujkolp"; C4 = "a"
+def ComputerKeyboard(keys = KEYS, c4 = C4):
+	import msvcrt
+	on = mido.Message("note_on")
+	on.velocity = 100#127
+	off = mido.Message("note_off")
+	c4 = 60 - keys.index(c4)
+	
+	current = []#[i] = (starttime, key)
+	while 1:
+		#get keys:
+		while msvcrt.kbhit():
+			key = msvcrt.getch().lower()
+			if key in keys:
+				for i, (start, k) in enumerate(current):
+					if k == key:
+						current[i] = (time.time(), key)
+						break
+				else:
+					current.append((time.time(), key))
+				
+				n = keys.index(key) + c4
+				yield on.copy(note=n)
+			else:
+				print key
+		
+		#release old keys:
+		p = 0
+		t = time.time()
+		while p < len(current):
+			if t - current[p][0] > 0.2:
+				n = keys.index(current.pop(p)[1]) + c4
+				yield off.copy(note=n)
+			else:
+				p += 1
+			
+		time.sleep(0.001)#allow the audio to render
+
+#helpers
 def HandleMessage(msg, gen, instruments, verbose=False):
 	if msg.type == "note_on":
 		if msg.velocity == 0:
@@ -89,6 +131,7 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 		#print msg.type,
 		pass
 
+#main modes:
 def PlayMidoPort(gen, port, instruments, verbose=True):
 	stream = audio.play(gen)
 	
@@ -126,7 +169,7 @@ def PlayMidoPort(gen, port, instruments, verbose=True):
 	
 	stream.close()
 
-def RenderMidi(gen, mid, instruments, verbose=True, saveMemory=True):#generator
+def RenderMidi(gen, mid, instruments, verbose=True, saveMemory=True):#a generator returning audioframes in strings
 	if verbose:
 		print "render start"
 	t = 0
@@ -156,13 +199,89 @@ def RenderMidi(gen, mid, instruments, verbose=True, saveMemory=True):#generator
 			print "Progress: %.2f%% (%i:%s / %s)  Events: %i  Renders: %i  Time: %.2fs" % ((t/l)*100, int(t)//60, str(int(t)%60).zfill(2), ls, n+1, r, time.time()-epoch)
 			prev_time = time.time()
 
-def main(keyboard=None, midifile=None, verbose=True, output=None):
-	if keyboard:
+class PlayMidiPrerendered:#use as a funcction
+	def __init__(self, gen, mid, intruments, verbose = True, saveMemory=True):
+		if verbose: print "render init"
+		self.buff = []
+		self.played = 0#frames
+		rendered = 0
+		
+		if verbose:
+			if saveMemory:
+				length = sum(i.time for i in iterMid(mid))
+			else:
+				length = mid.length#very timeconsuming for black midis
+			length = "%i:%s" % (length//60, str(int(length%60)).zfill(2))
+		
+		#start audio playback in an another thread:
+		if verbose: print "stream init"
+		pa = pyaudio.PyAudio()
+		stream = pa.open(format=audio.FORMAT,
+						channels=audio.CHANNELS,
+						rate=audio.RATE,
+						output=True,
+						frames_per_buffer=audio.CHUNK,
+						stream_callback=self.callback)
+		
+		#render audio:
+		if verbose: print "render start"
+		t = time.time()
+		for data in RenderMidi(gen, mid, intruments, False, saveMemory):
+			self.buff.append(data)
+			rendered += len(data)/4
+			
+			#print progress:
+			if verbose and time.time()-t >= 0.2:
+				t = time.time()
+				print self.progress(rendered, length)
+			
+		if verbose: print "waiting out..."
+		
+		while self.played < rendered:
+			if verbose: print self.progress(rendered, length)
+			time.sleep(0.2)
+		
+		stream.close()
+	def progress(self, rendered, length):
+		p = int(float(self.played)/audio.RATE)#name-lookup speedup potential? probably not needed.
+		r = int(float(rendered)/audio.RATE)
+		o = r - p
+		return "Played: %i:%s  Rendered: %i:%s  Overhead: %i:%s  Length: %s" % (p//60, str(p%60).zfill(2), r//60, str(r%60).zfill(2), o//60, str(o%60).zfill(2), length)
+	def callback(self, in_data, frame_count, time_info, status_flags):
+		frame_count *= audio.CHANNELS * audio.SAMPLE_WIDHT
+		out = []
+		l = 0
+		while self.buff:
+			check = l + len(self.buff[0])
+			if check > frame_count:
+				data = self.buff[0]
+				self.buff[0] = data[-check+frame_count:]
+				out.append(data[:-check+frame_count])
+				l += len(out[-1])
+				break
+			else:
+				out.append(self.buff.pop(0))
+				l += len(out[-1])
+				if check == frame_count: break
+		if l < frame_count:
+			out.append("\0\0" * (frame_count-l))
+		
+		self.played += l / (audio.CHANNELS * audio.SAMPLE_WIDHT)
+		
+		#print len("".join(out)), frame_count
+		
+		return ("".join(out), pyaudio.paContinue)
+
+def main(keyboard=None, midifile=None, verbose=True, output=None, PrerenderMidi=False, computerKeyboard=False):
+	if keyboard or computerKeyboard:
 		if output:
 			raise Exception("Realtime output not implemented")#(yet?)
-		port = mido.open_input(keyboard)
+		if keyboard:
+			port = mido.open_input(keyboard)
+		else:
+			port = ComputerKeyboard()
 	elif midifile:
-		if output:
+		if output or PrerenderMidi:
 			port =  mido.MidiFile(midifile)
 		else:
 			port =  mido.MidiFile(midifile).play()
@@ -189,6 +308,8 @@ def main(keyboard=None, midifile=None, verbose=True, output=None):
 		for data in RenderMidi(gen, port, instruments, verbose=verbose):
 			f.writeframes(data)
 		f.close()
+	elif midifile and PrerenderMidi:
+		PlayMidiPrerendered(gen, port, instruments, verbose=verbose)#blocking
 	else:
 		PlayMidoPort(gen, port, instruments, verbose=verbose)#blocking
 	
@@ -196,8 +317,9 @@ def main(keyboard=None, midifile=None, verbose=True, output=None):
 	#	port.close()
 
 if __name__ == "__main__":
-	f, k, s, o	= None, None, False, None
-	#k = mido.get_input_names()[0]#todo: give the user a choice?
+	f, k, s, o, ck, pre = None, None, False, None, False, False
+	if mido.get_input_names() and 0:
+		k = mido.get_input_names()[0]#todo: give the user a choice?
 	
 	#f = "midis/13417_Ballad-of-the-Windfish.mid"
 	#f = "midis/27641_Green-Greens.mid"
@@ -207,11 +329,11 @@ if __name__ == "__main__":
 	#f = "midis/Darude_-_Sandstorm.mid"
 	#f = "midis/file.mid"
 	#f = "midis/gerudo valley.mid"
-	#f = "midis/Hare Hare Yukai.mid"; s=True
+	#f = "midis/Hare Hare Yukai.mid"#; s=True#s is not neccesary with prerender enabled
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
-	f = "midis/Makrells.mid"
+	#f = "midis/Makrells.mid"
 	#f = "midis/native faith.mid"
 	#f = "midis/portal_still_alive.mid"
 	#f = "midis/Rhythm.mid"
@@ -281,7 +403,7 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/sailing.mid"
 	#f = "midis/hoenn/show-me-around.mid"
 	#f = "midis/hoenn/slateport-city.mid"
-	#f = "midis/hoenn/sootopolis.mid"
+	f = "midis/hoenn/sootopolis.mid"
 	#f = "midis/hoenn/surfing.mid"
 	#f = "midis/hoenn/title-screen.mid"
 	#f = "midis/hoenn/trick-house.mid"
@@ -292,9 +414,10 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/wild-pokemon-battle.mid"
 	
 	#holy hell
-	s = True
+	#s = True#silent
 	#f = "midis/black midi/Death Waltz.mid"
-	f = "midis/black midi/EVANS_ZUMN_finished_AS.mid"
+	#f = "midis/black midi/EVANS_ZUMN_finished_AS.mid"
+	#f = "midis/black midi/Second Heaven.mid"
 	#f = "midis/black midi/TheSuperMarioBros2 - 3k 3,000,000.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - Armageddon to Archeopterix and Icaria 4.mid"#memoryerror
 	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
@@ -305,8 +428,10 @@ if __name__ == "__main__":
 	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"#memoryerror without iterMid
 	#f = "midis/black midi/.mid"
 	
-	o = "out.wav"; s = False
-	main(keyboard=k, midifile=f, verbose=not s, output = o)
+	#o = "out.wav"; s = False
+	#ck = True#computer keyboard
+	pre = True#prerender midi playback. This will play the whole song, even when to slow to do it realtime. not reccomended for too complex songs
+	main(keyboard=k, midifile=f, verbose=not s, output = o, computerKeyboard=ck, PrerenderMidi=pre)
 	
 
 

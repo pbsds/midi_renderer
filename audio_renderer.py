@@ -3,9 +3,9 @@ import pyaudio, math, random, time, numpy as np
 #global settings
 CHUNK = 512
 FORMAT = pyaudio.paInt16
+SAMPLE_WIDHT = 2#16bit
 CHANNELS = 2
 RATE = 44100
-RECORD_SECONDS = 5
 
 #generator
 class generator():
