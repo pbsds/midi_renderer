@@ -156,9 +156,17 @@ class Soundfont:
 		out[6] = harpsichord
 		
 		#chromatic percussion
-		ChromaticPercussion = self.AddAttack2Wave(self.squareWave, length=0.01)#, perSecond=True)
+		ChromaticPercussion = self.AddAttack2Wave(self.squareWave, length=0.01)
 		ChromaticPercussion = self.ChangeWaveOctave(ChromaticPercussion, change=+1)
 		for i in xrange(8,16): out[i] = ChromaticPercussion
+		#MusicBox = self.AddAttack2Wave(self.squareWave, length=0.04)
+		#out[10] = MusicBox
+		Vibraphone = self.AddAttack2Wave(self.triangleWave, length=0.3)
+		Vibraphone = self.AddPitchWobbles2Wave(Vibraphone, speed=1.5, strength=0.30)
+		out[11] = Vibraphone
+		Marimba = self.AddAttack2Wave(self.sine5Wave, length=0.1)
+		Marimba = self.AddPitchWobbles2Wave(Marimba, speed=2.5, strength=0.35)
+		out[12] = Marimba#WIP?
 		
 		#organs:
 		organ = self.AddAttack2Wave(self.sineWave, length=1.5)
@@ -257,6 +265,7 @@ class Soundfont:
 # 118 Melodic Tom
 # 119 Synth Drum
 # 120 Reverse Cymbal
+		out[115] = self.ChangeWaveOctave(self.AddAttack2Wave(self.sawtoothWave, length=0.006), change=-3)#Woodblock
 		out[117] = self.drum2Beat#Melodic Tom
 		
 		#Sound effects

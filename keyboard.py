@@ -49,7 +49,7 @@ def iterMid(mid):
 #computer keyboard "port"
 #KEYS = "awsedrftghujikol"; C4 = "d"
 KEYS = "awsedftgyhujkolp"; C4 = "a"
-def ComputerKeyboard(keys = KEYS, c4 = C4):
+def ComputerKeyboard(keys = KEYS, c4 = C4):#iterate over this as if it was a mido port
 	import msvcrt
 	on = mido.Message("note_on")
 	on.velocity = 100#127
@@ -91,7 +91,7 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 	if msg.type == "note_on":
 		if msg.velocity == 0:
 			gen.stop_note(msg.channel, msg.note)
-		#elif msg.channel == 7:#used to solo out a track
+		#elif msg.channel == 3:#previously used to solo out a track
 		else:
 			gen.set_note(msg.channel, msg.note, float(msg.velocity)/127.)
 		if verbose: print "note(%i,%i)" % (msg.note, msg.velocity),
@@ -103,11 +103,9 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 			gen.instruments[msg.channel] = instruments[msg.program]
 			gen.instruments = gen.instruments[:]#apparently this makes it faster?
 		if verbose: print "Instrument(%i,%i)" % (msg.channel, msg.program), #changes msg.channel to the instrument here. https://en.wikipedia.org/wiki/General_MIDI#Program_change_events
-	
-	elif msg.type == "pitchwheel": 
+	elif msg.type == "pitchwheel":
 		gen.set_pitch(msg.channel, float(msg.pitch)/8192.)
 		if verbose: print "pitch(%i,%.2f)" % (msg.channel, float(msg.pitch)/8192.),
-	
 	elif msg.type == "control_change":# http://www.midi.org/techspecs/midimessages.php#3
 		if msg.control == 7:#channel colume
 			if verbose: print "volume(%i,%i)" % (msg.channel, msg.value),
@@ -126,7 +124,6 @@ def HandleMessage(msg, gen, instruments, verbose=False):
 			pass
 		else:
 			if verbose: print "unknown-control(%i,%i,%i)" % (msg.channel, msg.control, msg.value),
-		#print msg.control, msg.value, msg.channel
 	elif msg.type not in ("clock",) and verbose:
 		#print msg.type,
 		pass
@@ -403,7 +400,7 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/sailing.mid"
 	#f = "midis/hoenn/show-me-around.mid"
 	#f = "midis/hoenn/slateport-city.mid"
-	f = "midis/hoenn/sootopolis.mid"
+	#f = "midis/hoenn/sootopolis.mid"
 	#f = "midis/hoenn/surfing.mid"
 	#f = "midis/hoenn/title-screen.mid"
 	#f = "midis/hoenn/trick-house.mid"
@@ -412,6 +409,64 @@ if __name__ == "__main__":
 	#f = "midis/hoenn/verdanturf-town.mid"
 	#f = "midis/hoenn/victory-road.mid"
 	#f = "midis/hoenn/wild-pokemon-battle.mid"
+	
+	#f = "midis/yoshis island/big-bad-baby-bowser-awe-64-version-.mid"
+	#f = "midis/yoshis island/big-boss-2-.mid"
+	#f = "midis/yoshis island/big-boss-3-.mid"
+	#f = "midis/yoshis island/big-boss-4-.mid"
+	#f = "midis/yoshis island/big-boss.mid"
+	#f = "midis/yoshis island/boss-intro.mid"
+	f = "midis/yoshis island/castle-2-.mid"
+	#f = "midis/yoshis island/castle-haunted-remix-.mid"
+	#f = "midis/yoshis island/castle.mid"
+	#f = "midis/yoshis island/crystal-caves-2-.mid"
+	#f = "midis/yoshis island/crystal-caves-3-.mid"
+	#f = "midis/yoshis island/crystal-caves-4-.mid"
+	#f = "midis/yoshis island/crystal-caves-5-.mid"
+	#f = "midis/yoshis island/crystal-caves.mid"
+	#f = "midis/yoshis island/ending-credits-2-.mid"
+	#f = "midis/yoshis island/ending-credits.mid"
+	#f = "midis/yoshis island/goal-.mid"
+	#f = "midis/yoshis island/goal-polka-remix-.mid"
+	#f = "midis/yoshis island/hop-hop-donut-lifts-2-.mid"
+	#f = "midis/yoshis island/hop-hop-donut-lifts-slow-remix-.mid"
+	#f = "midis/yoshis island/hop-hop-donut-lifts.mid"
+	#f = "midis/yoshis island/invincibility-2-.mid"
+	#f = "midis/yoshis island/invincibility.mid"
+	#f = "midis/yoshis island/kamek-s-spell-2-.mid"
+	#f = "midis/yoshis island/kamek-s-spell.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-2-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-3-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-4-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-5-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-6-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-elevator-remix-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs-yoshi-s-story-remix-.mid"
+	#f = "midis/yoshis island/make-eggs-throw-eggs.mid"
+	#f = "midis/yoshis island/story-dialog.mid"
+	#f = "midis/yoshis island/title-screen.mid"
+	#f = "midis/yoshis island/touch-fuzzy-get-dizzy-2-.mid"
+	#f = "midis/yoshis island/touch-fuzzy-get-dizzy-3-.mid"
+	#f = "midis/yoshis island/touch-fuzzy-get-dizzy.mid"
+	#f = "midis/yoshis island/transformation.mid"
+	#f = "midis/yoshis island/welcome-to-yoshi-s-island-2-.mid"
+	#f = "midis/yoshis island/welcome-to-yoshi-s-island-3-.mid"
+	#f = "midis/yoshis island/welcome-to-yoshi-s-island.mid"
+	#f = "midis/yoshis island/world-map-1-2-.mid"
+	#f = "midis/yoshis island/world-map-1-v1-1-.mid"
+	#f = "midis/yoshis island/world-map-2-2-.mid"
+	#f = "midis/yoshis island/world-map-2-v1-1-.mid"
+	#f = "midis/yoshis island/world-map-3-2-.mid"
+	#f = "midis/yoshis island/world-map-3-v1-1-.mid"
+	#f = "midis/yoshis island/world-map-4-2-.mid"
+	#f = "midis/yoshis island/world-map-4-v1-1-.mid"
+	#f = "midis/yoshis island/world-map-5-2-.mid"
+	#f = "midis/yoshis island/world-map-5-v1-1-.mid"
+	#f = "midis/yoshis island/world-map-6-2-.mid"
+	#f = "midis/yoshis island/world-map-6-v1-1-.mid"
+	#f = "midis/yoshis island/world-map-7.mid"
+	#f = "midis/yoshis island/yoshi-remix-.mid"
+
 	
 	#holy hell
 	#s = True#silent
