@@ -196,7 +196,7 @@ def RenderMidi(gen, mid, instruments, verbose=True, saveMemory=True):#a generato
 			print "Progress: %.2f%% (%i:%s / %s)  Events: %i  Renders: %i  Time: %.2fs" % ((t/l)*100, int(t)//60, str(int(t)%60).zfill(2), ls, n+1, r, time.time()-epoch)
 			prev_time = time.time()
 
-class PlayMidiPrerendered:#use as a funcction
+class PlayMidiPrerendered:#use this as a funcction
 	def __init__(self, gen, mid, intruments, verbose = True, saveMemory=True):
 		if verbose: print "render init"
 		self.buff = []
@@ -250,6 +250,7 @@ class PlayMidiPrerendered:#use as a funcction
 		l = 0
 		while self.buff:
 			check = l + len(self.buff[0])
+			#check = sum(map(len, out)) + len(self.buff[0])
 			if check > frame_count:
 				data = self.buff[0]
 				self.buff[0] = data[-check+frame_count:]
@@ -261,7 +262,7 @@ class PlayMidiPrerendered:#use as a funcction
 				l += len(out[-1])
 				if check == frame_count: break
 		if l < frame_count:
-			out.append("\0\0" * (frame_count-l))
+			out.append("\0" * (frame_count-l))
 		
 		self.played += l / (audio.CHANNELS * audio.SAMPLE_WIDHT)
 		
@@ -326,7 +327,7 @@ if __name__ == "__main__":
 	#f = "midis/Darude_-_Sandstorm.mid"
 	#f = "midis/file.mid"
 	#f = "midis/gerudo valley.mid"
-	#f = "midis/Hare Hare Yukai.mid"#; s=True#s is not neccesary with prerender enabled
+	f = "midis/Hare Hare Yukai.mid"#; s=True#silent is not neccesary with prerender enabled
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
@@ -416,7 +417,7 @@ if __name__ == "__main__":
 	#f = "midis/yoshis island/big-boss-4-.mid"
 	#f = "midis/yoshis island/big-boss.mid"
 	#f = "midis/yoshis island/boss-intro.mid"
-	f = "midis/yoshis island/castle-2-.mid"
+	#f = "midis/yoshis island/castle-2-.mid"
 	#f = "midis/yoshis island/castle-haunted-remix-.mid"
 	#f = "midis/yoshis island/castle.mid"
 	#f = "midis/yoshis island/crystal-caves-2-.mid"
@@ -467,8 +468,7 @@ if __name__ == "__main__":
 	#f = "midis/yoshis island/world-map-7.mid"
 	#f = "midis/yoshis island/yoshi-remix-.mid"
 
-	
-	#holy hell
+	#holy hell; black midis
 	#s = True#silent
 	#f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/EVANS_ZUMN_finished_AS.mid"
@@ -485,7 +485,7 @@ if __name__ == "__main__":
 	
 	#o = "out.wav"; s = False
 	#ck = True#computer keyboard
-	pre = True#prerender midi playback. This will play the whole song, even when to slow to do it realtime. not reccomended for too complex songs
+	pre = True#prerender midi playback. Reccomended when there are heavy peaks, not if the whole song is too heavy to render realtime.(mainly black midis)
 	main(keyboard=k, midifile=f, verbose=not s, output = o, computerKeyboard=ck, PrerenderMidi=pre)
 	
 
