@@ -327,7 +327,7 @@ if __name__ == "__main__":
 	#f = "midis/Darude_-_Sandstorm.mid"
 	#f = "midis/file.mid"
 	#f = "midis/gerudo valley.mid"
-	f = "midis/Hare Hare Yukai.mid"#; s=True#silent is not neccesary with prerender enabled
+	#f = "midis/Hare Hare Yukai.mid"#; s=True#silent is not neccesary with prerender enabled
 	#f = "midis/he is a pirate.mid"
 	#f = "midis/kdikarus.mid"
 	#f = "midis/Led_Zeppelin_-_Stairway_to_Heaven.mid"
@@ -472,20 +472,21 @@ if __name__ == "__main__":
 	#s = True#silent
 	#f = "midis/black midi/Death Waltz.mid"
 	#f = "midis/black midi/EVANS_ZUMN_finished_AS.mid"
-	#f = "midis/black midi/Second Heaven.mid"
-	#f = "midis/black midi/TheSuperMarioBros2 - 3k 3,000,000.mid"#memoryerror
+	#f = "midis/black midi/Second Heaven.mid"#dunnolol
+	#f = "midis/black midi/TheSuperMarioBros2 - 3k 3,000,000.mid"#memoryerror on 32bit
 	#f = "midis/black midi/TheSuperMarioBros2 - Armageddon to Archeopterix and Icaria 4.mid"#memoryerror
-	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror
+	#f = "midis/black midi/TheSuperMarioBros2 - bad apple 4.6 million.mid"#memoryerror on 32bit
 	#f = "midis/black midi/TheSuperMarioBros2 - Rainbow trololo black 1.5 million notes.mid"#memoryerror without iterMid
-	#f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror
+	f = "midis/black midi/TheSuperMarioBros2 - The Destroyer 6.26 million.mid"#memoryerror on 32bit
 	#f = "midis/black midi/TheSuperMarioBros2 - The Titan_2.mid"
+	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded 2.mid"#ech, works with iterMid
 	#f = "midis/black midi/TheSuperMarioBros2 - Unbounded.mid"#memoryerror without iterMid
 	#f = "midis/black midi/TheSuperMarioBros2 - Voyage 1.26 million.mid"#memoryerror without iterMid
 	#f = "midis/black midi/.mid"
 	
-	#o = "out.wav"; s = False
+	o = "out.wav"; s = False
 	#ck = True#computer keyboard
-	pre = True#prerender midi playback. Reccomended when there are heavy peaks, not if the whole song is too heavy to render realtime.(mainly black midis)
+	#pre = True#prerender midi playback. Reccomended when there are heavy peaks, not if the whole song is too heavy to render realtime.(mainly black midis)
 	main(keyboard=k, midifile=f, verbose=not s, output = o, computerKeyboard=ck, PrerenderMidi=pre)
 	
 
